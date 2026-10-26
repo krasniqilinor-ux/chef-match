@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Chef Match – v0.2.1</title>
+<title>Chef Match – v0.2.2</title>
 <style>
   html,body{margin:0;height:100%;background:#3b2418;overflow:hidden;touch-action:none;
     font-family:"Trebuchet MS",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
@@ -64,7 +64,7 @@
   <button id="btnLogFin">📋 Copier le log</button>
 </div></div>
 
-<div id="version">v0.2.1</div>
+<div id="version">v0.2.2</div>
 <button id="btnNiveaux">☰ Niveaux</button>
 <div id="ecranNiveaux" class="ecran"><h1>👨‍🍳 Chef Match</h1><div class="sous">La Petite Marée – choisis un niveau</div><div id="grilleNiveaux"></div></div>
 <div id="intro" class="ecran"><div id="bulle"></div><div id="introAide">Touche pour continuer</div><button id="btnPasser">Passer ⏭</button></div>
@@ -89,7 +89,7 @@
 /* =====================================================================
  * 1. CONFIGURATION & NIVEAU (données pures, futur fichier JSON)
  * ===================================================================== */
-const VERSION = "v0.2.1";
+const VERSION = "v0.2.2";
 const CONFIG = {
   types: ["🍕","🍔","🍣","🥐","🍩","🥗"], // index = type de pièce
   durees: { swap: 160, rebond: 130, pop: 180, chuteParCase: 70, spawn: 160 }, // ms
@@ -100,7 +100,7 @@ const CONFIG = {
 
 /* --- Données MatchDesign embarquées telles quelles (/workspace/chefmatch/levels.json) --- */
 const DATA_NIVEAUX = {
-  "version": 1,
+  "version": 2,
   "gridLegend": {
     ".": "case jouable",
     "#": "case vide"
@@ -169,7 +169,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 3,
-      "moves": 20,
+      "moves": 16,
       "colors": [
         "tomato",
         "croissant",
@@ -181,15 +181,15 @@ const DATA_NIVEAUX = {
         {
           "type": "collect",
           "piece": "tomato",
-          "count": 10
+          "count": 15
         },
         {
           "type": "collect",
           "piece": "basil",
-          "count": 10
+          "count": 15
         }
       ],
-      "targetWinRate": 0.92,
+      "targetWinRate": 0.8,
       "grid": [
         "........",
         "........",
@@ -204,7 +204,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 4,
-      "moves": 18,
+      "moves": 15,
       "colors": [
         "tomato",
         "croissant",
@@ -216,10 +216,10 @@ const DATA_NIVEAUX = {
         {
           "type": "collect",
           "piece": "macaron",
-          "count": 14
+          "count": 20
         }
       ],
-      "targetWinRate": 0.9,
+      "targetWinRate": 0.75,
       "grid": [
         "##....##",
         "#......#",
@@ -235,27 +235,28 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 5,
-      "moves": 20,
+      "moves": 16,
       "colors": [
         "tomato",
         "croissant",
         "macaron",
         "basil",
-        "cheese"
+        "cheese",
+        "blueberry"
       ],
       "goals": [
         {
           "type": "collect",
           "piece": "cheese",
-          "count": 12
+          "count": 16
         },
         {
           "type": "collect",
           "piece": "croissant",
-          "count": 12
+          "count": 16
         }
       ],
-      "targetWinRate": 0.9,
+      "targetWinRate": 0.65,
       "grid": [
         "........",
         "........",
@@ -271,22 +272,23 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 6,
-      "moves": 20,
+      "moves": 16,
       "colors": [
         "tomato",
         "croissant",
         "macaron",
         "basil",
-        "cheese"
+        "cheese",
+        "blueberry"
       ],
       "goals": [
         {
           "type": "collect",
           "piece": "basil",
-          "count": 20
+          "count": 28
         }
       ],
-      "targetWinRate": 0.88,
+      "targetWinRate": 0.6,
       "grid": [
         "........",
         "........",
@@ -302,32 +304,33 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 7,
-      "moves": 20,
+      "moves": 17,
       "colors": [
         "tomato",
         "croissant",
         "macaron",
         "basil",
-        "cheese"
+        "cheese",
+        "blueberry"
       ],
       "goals": [
         {
           "type": "collect",
           "piece": "tomato",
-          "count": 12
+          "count": 16
         },
         {
           "type": "collect",
           "piece": "macaron",
-          "count": 12
+          "count": 16
         },
         {
           "type": "collect",
           "piece": "cheese",
-          "count": 8
+          "count": 12
         }
       ],
-      "targetWinRate": 0.85,
+      "targetWinRate": 0.55,
       "grid": [
         "........",
         "........",
@@ -342,7 +345,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 8,
-      "moves": 22,
+      "moves": 17,
       "colors": [
         "tomato",
         "croissant",
@@ -354,10 +357,10 @@ const DATA_NIVEAUX = {
         {
           "type": "collect",
           "piece": "croissant",
-          "count": 25
+          "count": 35
         }
       ],
-      "targetWinRate": 0.85,
+      "targetWinRate": 0.6,
       "grid": [
         "........",
         "........",
@@ -373,26 +376,27 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 9,
-      "moves": 25,
+      "moves": 20,
       "colors": [
         "tomato",
         "croissant",
         "macaron",
-        "basil"
+        "basil",
+        "cheese"
       ],
       "goals": [
         {
           "type": "collect",
           "piece": "basil",
-          "count": 15
+          "count": 20
         },
         {
           "type": "collect",
           "piece": "tomato",
-          "count": 15
+          "count": 20
         }
       ],
-      "targetWinRate": 0.95,
+      "targetWinRate": 0.75,
       "grid": [
         "........",
         "........",
@@ -407,7 +411,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 10,
-      "moves": 20,
+      "moves": 18,
       "colors": [
         "tomato",
         "croissant",
@@ -420,15 +424,15 @@ const DATA_NIVEAUX = {
         {
           "type": "collect",
           "piece": "macaron",
-          "count": 20
+          "count": 28
         },
         {
           "type": "collect",
           "piece": "blueberry",
-          "count": 20
+          "count": 28
         }
       ],
-      "targetWinRate": 0.55,
+      "targetWinRate": 0.4,
       "grid": [
         "#......#",
         "........",
@@ -997,9 +1001,13 @@ class Renderer {
       g.font = "bold 17px Trebuchet MS";
       const lignes = j.message.split("\n"), lw = Math.min(this.w - 20, Math.max(...lignes.map(l => g.measureText(l).width)) + 30);
       const hh = 24 * lignes.length + 18, y0 = this.oy + T*b.L/2 - hh/2;
+      const e = j.msgVue ? j.msgVue.e : 1, cy = this.oy + T*b.L/2;   // pop + léger battement
+      const puls = j.message.includes("Mélange") ? 1 + 0.04 * Math.sin(temps / 90) : 1;
+      g.save(); g.translate(this.w/2, cy); g.scale(e * puls, e * puls); g.translate(-this.w/2, -cy);
       g.fillStyle = "rgba(90,50,32,.9)"; this.rectArrondi(this.w/2 - lw/2, y0, lw, hh, 16); g.fill();
       g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle";
       lignes.forEach((l, i) => g.fillText(l, this.w/2, y0 + 21 + i * 24));
+      g.restore();
     }
   }
   dessinerPiece(p, cx, cy, echelle, alpha, temps) {
@@ -1144,6 +1152,7 @@ class Game {
   }
   /** Bandeau temporaire au centre du plateau. */
   afficherMessage(m, ms = 1400) {
+    if (this.message !== m) { this.msgVue = { e: 0.4 }; this.animator.tween(this.msgVue, { e: 1 }, 260, Easing.sortieBack); }
     this.message = m; clearTimeout(this._tMsg);
     if (ms) this._tMsg = setTimeout(() => { if (this.message === m) this.message = null; }, ms);
   }
@@ -1171,6 +1180,7 @@ class Game {
       this.changerEtat(ETAT.IDLE); return;
     }
     this.log.coup(a, b, pa, pb);
+    this.log.data.coups[this.log.data.coups.length - 1].coupPossibleAvant = true; // le coup joué était valide
     if (T) { this.tutoCoup = null; this.indice = null; }
     B.echanger(a, b);
     this.coups--;
@@ -1323,12 +1333,10 @@ class Game {
       await this.sweetRush(); return this.terminer(true);
     }
     if (this.coups <= 0) return this.terminer(false);
-    if (!this.board.aUnCoupPossible()) {
-      this.afficherMessage("Mélange !", 0); await attendre(600);
-      this.board.melanger();
-      await this.animerPositions();
-      this.message = null;
-    }
+    const possible = this.board.aUnCoupPossible();
+    const dernier = this.log.data.coups[this.log.data.coups.length - 1];
+    if (dernier) { dernier.coupPossibleApres = possible; dernier.melange = !possible; this.log.sauver(); }
+    if (!possible) await this.melangerSiBesoin("apres_cascades");
     this.changerEtat(ETAT.IDLE);
   }
   /** Replace visuellement toutes les pièces à leur case logique. */
@@ -1378,6 +1386,26 @@ class Game {
     this.rush = null;
   }
 
+  /**
+   * Vérifie qu'un coup existe ; sinon mélange animé (bandeau « Mélange ! ») + événement log.
+   * Board.melanger() garantit : aucun match créé + au moins un coup (sinon nouvelle grille).
+   */
+  async melangerSiBesoin(raison, force = false) {
+    if (!force && this.board.aUnCoupPossible()) return false;
+    const etat = this.etat; this.changerEtat(ETAT.RESOLVING);
+    this.log.evenement("melange");
+    this.log.data.evenements[this.log.data.evenements.length - 1].raison = raison;
+    this.afficherMessage("🔀 " + (TEXTES["shuffle"] || TEXTES["board.shuffle"] || "Mélange !"), 0);
+    await attendre(650 / this.debug.vitesse);
+    const regen = !this.board.melanger();
+    if (regen) this.log.evenement("melange_regeneration");
+    this.board.cases().forEach(({ r, c }) => { const p = this.board.grille[r][c]; if (p && !this.vues.has(p)) { const v = this.vue(p); v.x = c; v.y = -1; } });
+    await this.animerPositions();
+    this.message = null;
+    this.changerEtat(etat === ETAT.END ? ETAT.END : ETAT.IDLE);
+    return true;
+  }
+
   terminer(victoire) {
     this.changerEtat(ETAT.END);
     this.log.fin(victoire ? "victoire" : "defaite");
@@ -1386,7 +1414,10 @@ class Game {
     UI.afficherFin(victoire, this);
   }
   /** Bouton « +5 coups » */
-  continuer() { this.log.evenement("plus5"); this.coups += 5; UI.cacher(); this.changerEtat(ETAT.IDLE); }
+  async continuer() {
+    this.log.evenement("plus5"); this.coups += 5; UI.cacher(); this.changerEtat(ETAT.IDLE);
+    await this.melangerSiBesoin("apres_plus5");   // FIX : la grille pouvait être bloquée au moment de la défaite
+  }
   rejouer() { if (!this.log.data.resultat) this.log.fin("abandon"); UI.cacher(); this.demarrer(); }
   niveauSuivant() { if (!this.log.data.resultat) this.log.fin("abandon"); UI.cacher(); this.demarrer((this.indexNiveau + 1) % NIVEAUX.length); }
   allerNiveau(i) { if (!this.log.data.resultat) this.log.fin("abandon"); UI.cacher(); this.demarrer(i); }
@@ -1396,12 +1427,10 @@ class Game {
     this.objectifs.forEach(o => o.restant = 0); this.finDeCoup(); }
   debugPerdre() { if (this.etat !== ETAT.IDLE) return; this.log.evenement("debug_perdre");
     this.coups = 0; this.terminer(false); }
-  debugPlus5() { if (this.etat === ETAT.END) this.continuer(); else { this.coups += 5; this.log.evenement("debug_plus5"); } }
+  debugPlus5() { if (this.etat === ETAT.END) this.continuer(); else { this.coups += 5; this.log.evenement("debug_plus5"); if (this.etat === ETAT.IDLE) this.melangerSiBesoin("apres_debug"); } }
   async debugMelanger() {
-    if (this.etat !== ETAT.IDLE) return; this.changerEtat(ETAT.RESOLVING); this.log.evenement("debug_melanger");
-    this.board.melanger();
-    await this.animerPositions();
-    this.changerEtat(ETAT.IDLE);
+    if (this.etat !== ETAT.IDLE) return; this.log.evenement("debug_melanger");
+    await this.melangerSiBesoin("debug", true);
   }
   debugIndice() { this.indice = this.board.trouverCoupPossible(); }
   debugPoserSpecial(cs, special) {
