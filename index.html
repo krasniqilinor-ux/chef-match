@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Chef Match – v0.2.5</title>
+<title>Chef Match – v0.2.6</title>
 <style>
   html,body{margin:0;height:100%;background:#3b2418;overflow:hidden;touch-action:none;
     font-family:"Trebuchet MS",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
@@ -64,7 +64,7 @@
   <button id="btnLogFin">📋 Copier le log</button>
 </div></div>
 
-<div id="version">v0.2.5</div>
+<div id="version">v0.2.6</div>
 <button id="btnNiveaux">☰ Niveaux</button>
 <div id="ecranNiveaux" class="ecran"><h1>👨‍🍳 Chef Match</h1><div class="sous">La Petite Marée – choisis un niveau</div><div id="grilleNiveaux"></div></div>
 <div id="intro" class="ecran"><div id="bulle"></div><div id="introAide">Touche pour continuer</div><button id="btnPasser">Passer ⏭</button></div>
@@ -89,20 +89,20 @@
 /* =====================================================================
  * 1. CONFIGURATION & NIVEAU (données pures, futur fichier JSON)
  * ===================================================================== */
-const VERSION = "v0.2.5";
+const VERSION = "v0.2.6";
 const CONFIG = {
   types: ["🍕","🍔","🍣","🥐","🍩","🥗"], // index = type de pièce
   durees: { swap: 160, rebond: 130, pop: 180, chuteParCase: 70, spawn: 160 }, // ms
   seuilSwipe: 0.3,
   indiceCoupsMax: 3,        // indice seulement si coups restants <= 3
-  delaiIndice: 15000,       // ms d'inactivité avant l'indice automatique (v0.2.5 : 15 s)          // fraction de case pour déclencher un swipe
+  delaiIndice: 15000,       // ms d'inactivité avant l'indice automatique (v0.2.6 : 15 s)          // fraction de case pour déclencher un swipe
   couleurs: { fond:"#3b2418", plateau:"#f3d9b1", case1:"#fbe8c8", case2:"#f1d3a5",
               hud:"#fff4e0", texte:"#5a3220", accent:"#e0703a", selection:"#ffb347" }
 };
 
 /* --- Données MatchDesign embarquées telles quelles (/workspace/chefmatch/levels.json) --- */
 const DATA_NIVEAUX = {
-  "version": 3,
+  "version": 4,
   "gridLegend": {
     ".": "case jouable",
     "#": "case vide"
@@ -237,7 +237,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 5,
-      "moves": 18,
+      "moves": 16,
       "colors": [
         "tomato",
         "croissant",
@@ -249,12 +249,12 @@ const DATA_NIVEAUX = {
         {
           "type": "collect",
           "piece": "cheese",
-          "count": 14
+          "count": 17
         },
         {
           "type": "collect",
           "piece": "croissant",
-          "count": 14
+          "count": 17
         }
       ],
       "targetWinRate": 0.85,
@@ -273,7 +273,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 6,
-      "moves": 16,
+      "moves": 14,
       "colors": [
         "tomato",
         "croissant",
@@ -285,7 +285,7 @@ const DATA_NIVEAUX = {
         {
           "type": "collect",
           "piece": "basil",
-          "count": 24
+          "count": 30
         }
       ],
       "targetWinRate": 0.7,
@@ -304,7 +304,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 7,
-      "moves": 18,
+      "moves": 16,
       "colors": [
         "tomato",
         "croissant",
@@ -316,17 +316,17 @@ const DATA_NIVEAUX = {
         {
           "type": "collect",
           "piece": "tomato",
-          "count": 14
+          "count": 16
         },
         {
           "type": "collect",
           "piece": "macaron",
-          "count": 14
+          "count": 16
         },
         {
           "type": "collect",
           "piece": "cheese",
-          "count": 10
+          "count": 12
         }
       ],
       "targetWinRate": 0.82,
@@ -409,7 +409,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 10,
-      "moves": 18,
+      "moves": 22,
       "colors": [
         "tomato",
         "croissant",
@@ -422,12 +422,12 @@ const DATA_NIVEAUX = {
         {
           "type": "collect",
           "piece": "macaron",
-          "count": 24
+          "count": 22
         },
         {
           "type": "collect",
           "piece": "blueberry",
-          "count": 24
+          "count": 22
         }
       ],
       "targetWinRate": 0.5,
@@ -1226,7 +1226,7 @@ class Game {
     // Hors IDLE « libre » (animations, rush, tuto, écrans) : pas d'indice et le délai repart de zéro
     if (!this.indiceAutorise()) { this.indiceAuto = null; this.idleDepuis = t; this.indiceEvalue = false; return; }
     if (this.indiceAuto || this.indiceEvalue || t - (this.idleDepuis || t) < CONFIG.delaiIndice) return;
-    // Règle v0.2.5 : indice UNIQUEMENT quand il reste <= 3 coups (compteur), après 15 s d'inactivité
+    // Règle v0.2.6 : indice UNIQUEMENT quand il reste <= 3 coups (compteur), après 15 s d'inactivité
     if (this.coups > CONFIG.indiceCoupsMax) return;
     const coup = this.board.meilleurCoup(this.objectifs.filter(o => o.restant > 0).map(o => o.type));
     if (!coup) return;
