@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Chef Match – v0.2.6</title>
+<title>Chef Match – v0.3.1</title>
 <style>
-  html,body{margin:0;height:100%;background:#3b2418;overflow:hidden;touch-action:none;
+  html,body{margin:0;height:100%;background:#3b2418 url("assets/bg_terrace.jpg") center/cover no-repeat;overflow:hidden;touch-action:none;
     font-family:"Trebuchet MS",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
   canvas{display:block;margin:0 auto;touch-action:none}
   /* Écran de fin */
@@ -64,7 +64,7 @@
   <button id="btnLogFin">📋 Copier le log</button>
 </div></div>
 
-<div id="version">v0.2.6</div>
+<div id="version">v0.3.1</div>
 <button id="btnNiveaux">☰ Niveaux</button>
 <div id="ecranNiveaux" class="ecran"><h1>👨‍🍳 Chef Match</h1><div class="sous">La Petite Marée – choisis un niveau</div><div id="grilleNiveaux"></div></div>
 <div id="intro" class="ecran"><div id="bulle"></div><div id="introAide">Touche pour continuer</div><button id="btnPasser">Passer ⏭</button></div>
@@ -89,7 +89,7 @@
 /* =====================================================================
  * 1. CONFIGURATION & NIVEAU (données pures, futur fichier JSON)
  * ===================================================================== */
-const VERSION = "v0.2.6";
+const VERSION = "v0.3.1";
 const CONFIG = {
   types: ["🍕","🍔","🍣","🥐","🍩","🥗"], // index = type de pièce
   durees: { swap: 160, rebond: 130, pop: 180, chuteParCase: 70, spawn: 160 }, // ms
@@ -98,6 +98,55 @@ const CONFIG = {
   delaiIndice: 15000,       // ms d'inactivité avant l'indice automatique (v0.2.6 : 15 s)          // fraction de case pour déclencher un swipe
   couleurs: { fond:"#3b2418", plateau:"#f3d9b1", case1:"#fbe8c8", case2:"#f1d3a5",
               hud:"#fff4e0", texte:"#5a3220", accent:"#e0703a", selection:"#ffb347" }
+};
+
+/* =====================================================================
+ * FORMAT DE NIVEAUX v5 (rétrocompatible v4) – doc complète : /workspace/chefmatch/levels_format_v5.md
+ *  Un niveau v4 (sans "blockers") se charge et se joue À L'IDENTIQUE (même tirage aléatoire).
+ *  Ajouts v5, tous optionnels :
+ *   "blockers": [ { "type": "nappe", "hp": 2, "cells": [[r,c],...] },      // liste de cases
+ *                 { "type": "assiette", "hp": 2, "zone": [r0,c0,r1,c1] },  // rectangle inclus
+ *                 { "type": "carton", "hp": 3, "r": 4, "c": 3 },           // une seule case
+ *                 { "type": "plat", "cells": [[0,2]] } ]                   // plat à livrer
+ *   Couches par case (cumulables) :
+ *     sol    : nappe (1-2 PV) – sous la pièce ; perd 1 PV quand une pièce est effacée sur la case
+ *     case   : assiette (1-2), carton (1-3), casserole (1, se propage) – occupe la case, pas de pièce ;
+ *              perd 1 PV par match adjacent et par power-up qui la touche ; les pièces tombent « à travers »
+ *     dessus : glace (1-2, sensible aux matchs adjacents), chaîne (1, seulement si la pièce est matchée
+ *              ou touchée par un power-up) – la pièce dessous ne peut ni être échangée ni tomber
+ *   Un même bloqueur ne perd qu'1 PV par résolution (un match + un power-up simultanés = 1 PV).
+ *   "goals" v5 : { "type":"collect", "piece":"tomato", "count":12 }          (v4, inchangé)
+ *                { "type":"blocker", "blocker":"nappe", "count":12 }        (compte les bloqueurs DÉTRUITS)
+ *                { "type":"blocker", "blocker":"casserole" }                (sans count = « tous » : compteur
+ *                                                                            dynamique = nombre restant sur le plateau)
+ *                { "type":"deliver", "count":3 }                            (plats sortis par le bas ;
+ *                                                                            sans count = nombre de plats posés)
+ * ===================================================================== */
+
+/* --- Niveau de démonstration debug (?niveau=demo) : un exemplaire de chaque bloqueur --- */
+const NIVEAU_DEMO = {
+  id: "demo", moves: 40, colors: ["tomato", "croissant", "macaron", "basil", "cheese"], targetWinRate: null,
+  grid: ["........", "........", "........", "........", "........", "........", "........", "........"],
+  blockers: [
+    { type: "plat", cells: [[0, 1], [0, 6]] },
+    { type: "chaine", hp: 1, cells: [[1, 3], [1, 4]] },
+    { type: "glace", hp: 1, cells: [[2, 0], [2, 7]] },
+    { type: "glace", hp: 2, cells: [[2, 3]] },
+    { type: "nappe", hp: 1, cells: [[2, 3], [3, 1]] },            // 2 couches sur une case : nappe + glace / nappe + assiette
+    { type: "assiette", hp: 2, cells: [[3, 1], [3, 6]] },
+    { type: "assiette", hp: 1, cells: [[3, 4]] },
+    { type: "carton", hp: 3, cells: [[4, 3]] },
+    { type: "casserole", hp: 1, cells: [[5, 0], [5, 7]] },
+    { type: "nappe", hp: 1, zone: [6, 0, 6, 7] },
+    { type: "nappe", hp: 2, zone: [7, 2, 7, 5] }
+  ],
+  goals: [
+    { type: "blocker", blocker: "nappe", count: 14 },
+    { type: "blocker", blocker: "assiette", count: 3 },
+    { type: "deliver", count: 2 },
+    { type: "blocker", blocker: "casserole" }
+  ],
+  designNote: "Démo debug v0.3 : nappe 1/2 couches, assiettes 1/2 PV, carton 3 PV, casseroles, glace 1/2, chaînes, plats"
 };
 
 /* --- Données MatchDesign embarquées telles quelles (/workspace/chefmatch/levels.json) --- */
@@ -475,7 +524,10 @@ const TEXTES = {
   "powerup.pan": "Poêle Flambée",
   "powerup.pan.desc": "Explose une zone 3x3.",
   "powerup.star": "Étoile du Chef",
-  "powerup.star.desc": "Retire toutes les pièces d'une même couleur."
+  "powerup.star.desc": "Retire toutes les pièces d'une même couleur.",
+  "goal.blocker": "Nettoie la salle : élimine {count} {blocker} !",
+  "goal.blocker.all": "Élimine toutes les {blocker} !",
+  "goal.deliver": "Fais descendre {count} {plats} jusqu'en bas !"
 };
 /** Texte par clé avec remplacement {param} ; repli sur la clé si absente. */
 function txt(cle, params = {}) {
@@ -484,6 +536,53 @@ function txt(cle, params = {}) {
 
 /* --- Correspondance clé de pièce -> emoji (UN SEUL endroit) --- */
 const PIECES = { tomato: "🍅", croissant: "🥐", macaron: "🧁", basil: "🌿", cheese: "🧀", blueberry: "🫐" };
+
+/* --- v0.3.1 : visuels ArtStory (dossier assets/ à côté du HTML) ---
+ *  Chargés par id de pièce : assets/<id>.png (tomato, croissant...). Pas de table de traduction.
+ *  Si une image manque ou ne charge pas (ex. ouverture hors serveur sans le dossier), repli sur l'emoji. */
+const ASSETS = { dossier: "assets/", fond: "bg_terrace.jpg" };
+const Visuels = {
+  images: {}, fond: null,
+  charger() {
+    if (typeof Image === "undefined") return;           // sous Node : pas de chargement
+    const img = src => { const i = new Image(); i.onerror = () => { i.echec = true; }; i.src = src; return i; };
+    Object.keys(PIECES).forEach(id => { this.images[id] = img(ASSETS.dossier + id + ".png"); });
+    this.fond = img(ASSETS.dossier + ASSETS.fond);
+  },
+  /** Image prête à dessiner, ou null (=> emoji). */
+  pret(i) { return i && !i.echec && i.complete && i.naturalWidth > 0 ? i : null; },
+  piece(id) { return this.pret(this.images[id]); },
+  imageFond() { return this.pret(this.fond); }
+};
+
+/* --- Catalogue des bloqueurs v0.3 (rendu provisoire : formes + emojis) ---
+ *  couche : "sol" (sous la pièce), "case" (occupe la case), "dessus" (recouvre une pièce)
+ *  adjacent : perd 1 PV quand un match a lieu sur une case voisine (haut/bas/gauche/droite) */
+const BLOQUEURS = {
+  nappe:     { couche: "sol",    emoji: "🟥", nom: "nappes sales",   hpMax: 2, adjacent: false },
+  assiette:  { couche: "case",   emoji: "🍽️", nom: "assiettes",      hpMax: 2, adjacent: true },
+  carton:    { couche: "case",   emoji: "📦", nom: "cartons",        hpMax: 3, adjacent: true },
+  casserole: { couche: "case",   emoji: "🍲", nom: "casseroles",     hpMax: 1, adjacent: true, propagation: true },
+  glace:     { couche: "dessus", emoji: "🧊", nom: "pièces glacées", hpMax: 2, adjacent: true },
+  chaine:    { couche: "dessus", emoji: "⛓️", nom: "chaînes",        hpMax: 1, adjacent: false }
+};
+const TYPE_PLAT = -2;                       // type de pièce réservé aux plats à livrer (jamais matchable)
+const PLAT = { emoji: "🍝", nom: "plats" };
+const DIRS4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+/** Cases [r,c] décrites par une entrée "blockers" (r/c, cells ou zone). */
+function cellulesBloqueur(b) {
+  const l = [];
+  if (Number.isInteger(b.r) && Number.isInteger(b.c)) l.push([b.r, b.c]);
+  (b.cells || []).forEach(x => l.push([x[0], x[1]]));
+  if (b.zone) { const [r0, c0, r1, c1] = b.zone; for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) l.push([r, c]); }
+  return l;
+}
+/** Emoji affiché pour un objectif (HUD, menu, écran de fin). */
+function emojiObjectif(g) {
+  if (g.type === "blocker") return (BLOQUEURS[g.blocker] || {}).emoji || "❓";
+  if (g.type === "deliver") return PLAT.emoji;
+  return PIECES[g.piece] || "";
+}
 /* --- Specials internes -> power-ups du design (clés texts_fr.json) --- */
 const POWERUPS = {
   ligneH:  { cle: "knife", emoji: "🔪" },   // Couteau du Chef : ligne
@@ -543,6 +642,60 @@ const Logs = {
   effacer() { Store.set(CLES.logs, []); }
 };
 
+/* =====================================================================
+ * 1c. ÉCONOMIE (v0.3.1) – module séparé du gameplay, AUCUN paiement réel.
+ *  Deux monnaies séparées : pièces d'or (boutique, offres) et étoiles (méta rénovation, 1 par niveau gagné
+ *  la 1re fois). Sauvegarde localStorage (repli mémoire). Prix : CONFIG_ECONOMIE.
+ *  Point d'accroche : Economie.proposerOffre(id) – pour l'instant accorde l'offre GRATUITEMENT
+ *  (modeTest) et journalise l'événement, pour mesurer l'usage pendant les playtests.
+ * ===================================================================== */
+const CONFIG_ECONOMIE = {
+  modeTest: true,                     // true = offres gratuites (pas de boutique / paiement branché)
+  orDepart: 0,
+  etoilesParVictoire: 1,              // spec MatchDesign : 1 étoile par niveau gagné
+  offres: {
+    plus5coups: { prixOr: 900, coups: 5, declencheur: "ecran_defaite" }    // repère Royal Match ~900 pièces
+  },
+  journalMax: 200
+};
+const Economie = {
+  CLE: "chefmatch.economie",
+  lire() {
+    const e = Store.get(this.CLE, null);
+    return e && typeof e.or === "number" ? e : { or: CONFIG_ECONOMIE.orDepart, etoiles: 0, niveauxEtoiles: [], journal: [] };
+  },
+  ecrire(e) { e.journal = e.journal.slice(-CONFIG_ECONOMIE.journalMax); Store.set(this.CLE, e); return e; },
+  or() { return this.lire().or; },
+  etoiles() { return this.lire().etoiles; },
+  journaliser(e, evt) { e.journal.push({ t: new Date().toISOString(), ...evt }); },
+  ajouterOr(n, raison = "") { const e = this.lire(); e.or += n; this.journaliser(e, { type: "or", n, raison }); return this.ecrire(e).or; },
+  /** Dépense d'or : false si solde insuffisant. */
+  depenserOr(n, raison = "") { const e = this.lire(); if (e.or < n) return false; e.or -= n; this.journaliser(e, { type: "or", n: -n, raison }); this.ecrire(e); return true; },
+  /** Étoile de victoire : seulement à la 1re victoire d'un niveau. Renvoie le nb d'étoiles gagnées. */
+  gagnerEtoilesNiveau(idNiveau) {
+    const e = this.lire(); if (e.niveauxEtoiles.includes(idNiveau)) return 0;
+    const n = CONFIG_ECONOMIE.etoilesParVictoire; e.etoiles += n; e.niveauxEtoiles.push(idNiveau);
+    this.journaliser(e, { type: "etoiles", n, niveau: idNiveau }); this.ecrire(e); return n;
+  },
+  depenserEtoiles(n, raison = "") { const e = this.lire(); if (e.etoiles < n) return false; e.etoiles -= n; this.journaliser(e, { type: "etoiles", n: -n, raison }); this.ecrire(e); return true; },
+  /**
+   * Point d'accroche des offres (écran de défaite, boosters, vies...).
+   * Renvoie { accorde, gratuit, offre, prixOr }. Aujourd'hui : gratuit en modeTest, sinon payé en or.
+   */
+  proposerOffre(id, contexte = {}) {
+    const o = CONFIG_ECONOMIE.offres[id];
+    if (!o) return { accorde: false, raison: "offre_inconnue", offre: id };
+    const e = this.lire();
+    let accorde = false, gratuit = false;
+    if (CONFIG_ECONOMIE.modeTest) { accorde = true; gratuit = true; }
+    else if (e.or >= o.prixOr) { e.or -= o.prixOr; accorde = true; }
+    this.journaliser(e, { type: "offre", offre: id, prixOr: o.prixOr, accorde, gratuit, ...contexte });
+    this.ecrire(e);
+    return { accorde, gratuit, offre: id, prixOr: o.prixOr, ...o };
+  },
+  reset() { Store.del(this.CLE); }
+};
+
 /** Progression : nombre de niveaux débloqués + meilleur résultat par niveau (id). */
 const Progres = {
   lire() { const p = Store.get(CLES.progres, null); return p && p.debloques ? p : { debloques: 1, meilleurs: {} }; },
@@ -570,13 +723,99 @@ let prochainId = 1;
 function creerPiece(type, special = null) {
   return { id: prochainId++, type, special };
 }
+/** Plat à livrer : pièce non matchable, indestructible, qui tombe avec la gravité. */
+function creerPlat() { return { id: prochainId++, type: TYPE_PLAT, special: null, plat: true }; }
 
 class Board {
   /** masque : tableau de chaînes ('.' jouable, '#' vide) ou null = tout jouable */
-  constructor(lignes, colonnes, nbTypes, rng = Math.random, masque = null) {
+  constructor(lignes, colonnes, nbTypes, rng = Math.random, masque = null, bloqueurs = null) {
     this.L = lignes; this.C = colonnes; this.nbTypes = nbTypes; this.rng = rng; this.masque = masque;
+    this.initCouches(bloqueurs);
     this.grille = [];
     this.remplirSansMatch();
+  }
+
+  /* ---------- v0.3 : couches de bloqueurs ----------
+   *  this.sol[r][c]    : { type:"nappe", hp } | null           (sous la pièce)
+   *  this.bloc[r][c]   : { type, hp } | null                    (occupe la case : grille[r][c] reste null)
+   *  this.dessus[r][c] : { type:"glace"|"chaine", hp } | null   (recouvre la pièce : elle est figée)
+   *  Sans bloqueur, aucun appel au générateur aléatoire n'est ajouté (niveaux v4 identiques). */
+  initCouches(liste) {
+    const vide = () => Array.from({ length: this.L }, () => new Array(this.C).fill(null));
+    this.sol = vide(); this.bloc = vide(); this.dessus = vide(); this.platsInit = [];
+    this.aDesBloqueurs = false; this.casseroleTouchee = false;
+    for (const b of liste || []) for (const [r, c] of cellulesBloqueur(b)) {
+      if (!this.jouable(r, c)) continue;
+      if (b.type === "plat") { if (!this.bloc[r][c]) { this.platsInit.push({ r, c }); this.aDesBloqueurs = true; } continue; }
+      const def = BLOQUEURS[b.type]; if (!def) continue;
+      const hp = Math.max(1, Math.min(def.hpMax, b.hp || 1));
+      if (def.couche === "sol") this.sol[r][c] = { type: b.type, hp };
+      else if (def.couche === "case") { this.bloc[r][c] = { type: b.type, hp }; this.dessus[r][c] = null; }
+      else if (!this.bloc[r][c]) this.dessus[r][c] = { type: b.type, hp };
+      this.aDesBloqueurs = true;
+    }
+    this.platsInit = this.platsInit.filter(({ r, c }) => !this.bloc[r][c] && !this.dessus[r][c]);
+  }
+  /** Case occupée par un bloqueur (aucune pièce possible). */
+  occupee(r, c) { return !!(this.bloc[r] && this.bloc[r][c]); }
+  /** Case figée : bloqueur occupant ou pièce recouverte (ne tombe pas, ne s'échange pas). */
+  fixe(r, c) { return !!((this.bloc[r] && this.bloc[r][c]) || (this.dessus[r] && this.dessus[r][c])); }
+  /** Power-up activable par double-tap (pas sous glace/chaîne). */
+  peutActiver(r, c) { const p = this.get(r, c); return !!(p && p.special && !this.dessus[r][c]); }
+  /** Nombre de bloqueurs d'un type encore présents (toutes couches). */
+  compterBloqueurs(type) {
+    let n = 0;
+    for (let r = 0; r < this.L; r++) for (let c = 0; c < this.C; c++)
+      for (const couche of [this.sol, this.bloc, this.dessus]) if (couche[r][c] && couche[r][c].type === type) n++;
+    return n;
+  }
+  positionsPlats() { return this.cases().filter(({ r, c }) => this.grille[r] && this.grille[r][c] && this.grille[r][c].plat); }
+  /** Livraison : un plat arrivé sur la case mobile la plus basse de sa colonne sort du plateau. */
+  collecterPlats() {
+    if (!this.platsInit.length) return [];
+    const sortis = [];
+    for (let c = 0; c < this.C; c++) {
+      let bas = -1; for (let r = this.L - 1; r >= 0; r--) if (this.jouable(r, c) && !this.fixe(r, c)) { bas = r; break; }
+      const p = bas >= 0 ? this.grille[bas][c] : null;
+      if (p && p.plat) { sortis.push({ r: bas, c, piece: p }); this.grille[bas][c] = null; }
+    }
+    return sortis;
+  }
+  /**
+   * Casseroles : si aucune casserole n'a été touchée pendant le coup, l'une d'elles « déborde »
+   * sur une pièce normale voisine (qui devient une casserole). Renvoie {r,c,piece} ou null.
+   */
+  propagerCasseroles() {
+    if (!this.aDesBloqueurs) return null;
+    const touchee = this.casseroleTouchee; this.casseroleTouchee = false;
+    if (touchee) return null;
+    const cand = [], vu = new Set();
+    for (let r = 0; r < this.L; r++) for (let c = 0; c < this.C; c++) {
+      if (!this.bloc[r][c] || this.bloc[r][c].type !== "casserole") continue;
+      for (const [dr, dc] of DIRS4) {
+        const y = r + dr, x = c + dc, p = this.get(y, x);
+        if (p && !p.special && !p.plat && !this.fixe(y, x) && !vu.has(y * this.C + x)) { vu.add(y * this.C + x); cand.push({ r: y, c: x }); }
+      }
+    }
+    if (!cand.length) return null;
+    const cible = cand[Math.floor(this.rng() * cand.length)], piece = this.grille[cible.r][cible.c];
+    this.grille[cible.r][cible.c] = null; this.bloc[cible.r][cible.c] = { type: "casserole", hp: 1 };
+    return { ...cible, piece };
+  }
+  /** Le motif (cases) touche-t-il un bloqueur d'objectif (dessous, dessus, voisin sensible) ou fait-il descendre un plat ? */
+  toucheBloqueurs(cases, types) {
+    if (!types.length || !this.aDesBloqueurs) return false;
+    for (const { r, c } of cases) {
+      if (this.sol[r][c] && types.includes(this.sol[r][c].type)) return true;
+      if (this.dessus[r][c] && types.includes(this.dessus[r][c].type)) return true;
+      for (const [dr, dc] of DIRS4) {
+        const y = r + dr, x = c + dc; if (!this.dansGrille(y, x)) continue;
+        const b = this.bloc[y][x] || this.dessus[y][x];
+        if (b && BLOQUEURS[b.type].adjacent && types.includes(b.type)) return true;
+      }
+      if (types.includes("plat")) for (let y = 0; y < r; y++) { const p = this.grille[y][c]; if (p && p.plat) return true; }
+    }
+    return false;
   }
   dansGrille(r, c) { return r >= 0 && r < this.L && c >= 0 && c < this.C; }
   jouable(r, c) { return this.dansGrille(r, c) && (!this.masque || (this.masque[r] || "")[c] !== "#"); }
@@ -584,18 +823,22 @@ class Board {
   /** Liste des cases jouables */
   cases() { const l = []; for (let r = 0; r < this.L; r++) for (let c = 0; c < this.C; c++) if (this.jouable(r, c)) l.push({ r, c }); return l; }
   /** Grille pleine (toutes les cases jouables occupées) */
-  estPleine() { return this.cases().every(({ r, c }) => this.grille[r][c]); }
+  estPleine() { return this.cases().every(({ r, c }) => this.occupee(r, c) || this.grille[r][c]); }
   typeAleatoire() { return Math.floor(this.rng() * this.nbTypes); }
 
   /** Remplit la grille sans aucun match initial et avec au moins un coup possible. */
   remplirSansMatch(fixes = null) {
     const t_ = (p, t) => p && p.type === t;
+    // Plats à livrer : conservés à leur place actuelle (ou position initiale au premier remplissage)
+    const plats = new Set((this.grille.length && this.aDesBloqueurs ? this.positionsPlats() : this.platsInit).map(x => x.r * this.C + x.c));
+    let garde = 0;
     do {
       this.grille = [];
       for (let r = 0; r < this.L; r++) {
         this.grille.push([]);
         for (let c = 0; c < this.C; c++) {
-          if (!this.jouable(r, c)) { this.grille[r].push(null); continue; }
+          if (!this.jouable(r, c) || this.occupee(r, c)) { this.grille[r].push(null); continue; }
+          if (plats.has(r * this.C + c)) { this.grille[r].push(creerPlat()); continue; }
           const fixe = fixes && fixes.get(r * this.C + c);
           if (fixe) { this.grille[r].push(creerPiece(fixe.type, fixe.special || null)); continue; }
           let t, essais = 0;
@@ -606,7 +849,7 @@ class Board {
           this.grille[r].push(creerPiece(t));
         }
       }
-    } while (fixes ? false : (this.trouverMatches().length > 0 || !this.aUnCoupPossible()));
+    } while (fixes ? false : (this.trouverMatches().length > 0 || !this.aUnCoupPossible()) && ++garde < 500);
   }
 
   /**
@@ -726,10 +969,14 @@ class Board {
    * Cible d'une cloche : au hasard parmi les pièces les plus proches dont le
    * type est un objectif incomplet ; sinon une case quelconque au hasard.
    */
-  choisirCible(origine, typesObjectifs = [], exclus = new Set()) {
-    const toutes = this.cases().filter(x => this.grille[x.r][x.c] && !exclus.has(x.r * this.C + x.c));
+  choisirCible(origine, typesObjectifs = [], exclus = new Set(), bloqueursObjectifs = []) {
+    const toutes = this.cases().filter(x => (this.grille[x.r][x.c] || this.occupee(x.r, x.c)) && !exclus.has(x.r * this.C + x.c));
     if (!toutes.length) return null;
-    const obj = toutes.filter(x => typesObjectifs.includes(this.grille[x.r][x.c].type));
+    const estObj = ({ r, c }) => {
+      const p = this.grille[r][c]; if (p && typesObjectifs.includes(p.type)) return true;
+      return bloqueursObjectifs.some(t => [this.sol, this.bloc, this.dessus].some(k => k[r][c] && k[r][c].type === t));
+    };
+    const obj = toutes.filter(estObj);
     if (obj.length) {
       const d = x => Math.abs(x.r - origine.r) + Math.abs(x.c - origine.c);
       const dmin = Math.min(...obj.map(d)), proches = obj.filter(x => d(x) === dmin);
@@ -755,8 +1002,9 @@ class Board {
    * @param creations  [{r,c,special,type}] power-ups à poser
    * @param ciblesCouleur Map clé->type pour les bombes couleur échangées
    */
-  effacer(initiales, creations = [], ciblesCouleur = new Map()) {
+  effacer(initiales, creations = [], ciblesCouleur = new Map(), opts = {}) {
     const aEffacer = new Map();          // clé -> {r,c}
+    const touches = new Map(), vus = new Set();   // v0.3 : bloqueurs (case/dessus) touchés, 1 PV max par résolution
     const pile = [...initiales];
     const protegees = new Set(creations.map(k => k.r * this.C + k.c));
     const vols = [];                     // envols de cloches à animer ensuite
@@ -764,8 +1012,14 @@ class Board {
     while (pile.length) {
       const { r, c } = pile.pop();
       const k = r * this.C + c;
+      if (this.aDesBloqueurs && this.dansGrille(r, c) && (this.bloc[r][c] || this.dessus[r][c])) {
+        // Bloqueur occupant / pièce recouverte : on abîme le bloqueur, la pièce dessous reste (et son special ne part pas)
+        if (!vus.has(k)) { vus.add(k); touches.set(k, { r, c }); }
+        continue;
+      }
       if (aEffacer.has(k) || !this.grille[r][c]) continue;
       const p = this.grille[r][c];
+      if (p.plat) continue;                // les plats sont indestructibles
       aEffacer.set(k, { r, c, piece: p });
       if (p.special === "cloche")
         for (let n = 0; n < (p.nbVols || 1); n++) vols.push({ r, c, porte: p.porte || null });
@@ -786,7 +1040,37 @@ class Board {
       this.grille[cr.r][cr.c] = piece;
       crees.push({ r: cr.r, c: cr.c, piece });
     });
-    return { effacees, crees, protegees, vols, chaine };
+    const bloqueurs = this.aDesBloqueurs ? this.degatsBloqueurs(initiales, creations, effacees, touches, vus, opts) : [];
+    return { effacees, crees, protegees, vols, chaine, bloqueurs };
+  }
+
+  /**
+   * v0.3 – Applique les dégâts aux bloqueurs après une résolution :
+   *  - cases/dessus touchés directement (match sur pièce recouverte, zone de power-up, cible de cloche)
+   *  - voisins sensibles (adjacent:true) des cases d'un MATCH (opts.match), y compris la case du power-up créé
+   *  - nappes sous chaque pièce effacée
+   * Renvoie [{ r, c, type, couche, hp, detruit }].
+   */
+  degatsBloqueurs(initiales, creations, effacees, touches, vus, opts) {
+    const evts = [];
+    if (opts.match) for (const s of [...initiales, ...creations]) for (const [dr, dc] of DIRS4) {
+      const r = s.r + dr, c = s.c + dc; if (!this.dansGrille(r, c)) continue;
+      const k = r * this.C + c, b = this.bloc[r][c] || this.dessus[r][c];
+      if (b && BLOQUEURS[b.type].adjacent && !vus.has(k)) { vus.add(k); touches.set(k, { r, c }); }
+    }
+    touches.forEach(({ r, c }) => {
+      const couche = this.bloc[r][c] ? this.bloc : this.dessus, b = couche[r][c];
+      b.hp--; if (b.type === "casserole") this.casseroleTouchee = true;
+      const detruit = b.hp <= 0; if (detruit) couche[r][c] = null;
+      evts.push({ r, c, type: b.type, couche: couche === this.bloc ? "case" : "dessus", hp: Math.max(0, b.hp), detruit });
+    });
+    const nappes = new Set();
+    effacees.forEach(({ r, c }) => {
+      const k = r * this.C + c, n = this.sol[r][c]; if (!n || nappes.has(k)) return;
+      nappes.add(k); n.hp--; const detruit = n.hp <= 0; if (detruit) this.sol[r][c] = null;
+      evts.push({ r, c, type: n.type, couche: "sol", hp: Math.max(0, n.hp), detruit });
+    });
+    return evts;
   }
 
   /** Transforme les groupes de matches en cases + créations de power-ups. */
@@ -800,6 +1084,8 @@ class Board {
       let pos = casesEchangees.find(e => g.cases.some(cs => cs.r === e.r && cs.c === e.c));
       if (!pos && sp === "bombe") pos = g.centre;
       if (!pos) pos = g.cases[Math.floor(g.cases.length / 2)];
+      if (this.fixe(pos.r, pos.c)) pos = g.cases.find(x => !this.fixe(x.r, x.c));   // jamais de power-up sous la glace
+      if (!pos) return;
       const type = this.grille[pos.r][pos.c].type;
       creations.push({ r: pos.r, c: pos.c, special: sp, type });
     });
@@ -815,7 +1101,8 @@ class Board {
     const mouvements = [];
     for (let c = 0; c < this.C; c++) {
       // Les pièces tombent à travers les cases vides '#' jusqu'à la case jouable libre la plus basse
-      const rangs = []; for (let r = this.L - 1; r >= 0; r--) if (this.jouable(r, c)) rangs.push(r);
+      // v0.3 : elles traversent aussi les bloqueurs occupants et les pièces figées (glace/chaîne)
+      const rangs = []; for (let r = this.L - 1; r >= 0; r--) if (this.jouable(r, c) && !this.fixe(r, c)) rangs.push(r);
       let i = 0;
       for (const r of rangs) {
         const p = this.grille[r][c];
@@ -836,10 +1123,10 @@ class Board {
     const nouvelles = [];
     for (let c = 0; c < this.C; c++) {
       let vides = 0;
-      for (let r = 0; r < this.L; r++) if (this.jouable(r, c) && !this.grille[r][c]) vides++;
+      for (let r = 0; r < this.L; r++) if (this.jouable(r, c) && !this.fixe(r, c) && !this.grille[r][c]) vides++;
       let n = 0;
       for (let r = 0; r < this.L; r++) {
-        if (this.jouable(r, c) && !this.grille[r][c]) {
+        if (this.jouable(r, c) && !this.fixe(r, c) && !this.grille[r][c]) {
           const p = creerPiece(this.typeAleatoire());
           this.grille[r][c] = p;
           nouvelles.push({ piece: p, deR: (n++) - vides, versR: r, c });
@@ -853,6 +1140,7 @@ class Board {
   echangeValide(a, b) {
     const pa = this.get(a.r, a.c), pb = this.get(b.r, b.c);
     if (!pa || !pb) return false;
+    if (this.fixe(a.r, a.c) || this.fixe(b.r, b.c)) return false;   // pièce sous glace/chaîne : immobile
     if (pa.special || pb.special) return true;
     this.echanger(a, b);
     const ok = this.trouverMatches().length > 0;
@@ -871,7 +1159,7 @@ class Board {
   /** Coup possible : un échange valide, ou à défaut un power-up activable par double-tap. */
   aUnCoupPossible() {
     if (this.trouverCoupPossible() !== null) return true;
-    return this.cases().some(({ r, c }) => this.grille[r][c] && this.grille[r][c].special);
+    return this.cases().some(({ r, c }) => this.peutActiver(r, c));
   }
 
   /**
@@ -881,7 +1169,7 @@ class Board {
   compterCoups(max = Infinity) {
     let n = 0;
     for (const { r, c } of this.cases()) {
-      if (this.grille[r][c] && this.grille[r][c].special && ++n >= max) return n;   // activation
+      if (this.peutActiver(r, c) && ++n >= max) return n;   // activation
       for (const [dr, dc] of [[0, 1], [1, 0]])
         if (this.jouable(r + dr, c + dc) && this.echangeValide({ r, c }, { r: r + dr, c: c + dc }) && ++n >= max) return n;
     }
@@ -894,8 +1182,8 @@ class Board {
    *   3) matcher une pièce d'objectif      4) n'importe quel coup
    * Retour : { type, cellules:[{r,c}], a, b, special? } ou null
    */
-  meilleurCoup(typesObjectifs = []) {
-    const pu = this.cases().find(({ r, c }) => this.grille[r][c] && this.grille[r][c].special);
+  meilleurCoup(typesObjectifs = [], bloqueursObjectifs = []) {
+    const pu = this.cases().find(({ r, c }) => this.peutActiver(r, c));
     if (pu) return { type: "activation", cellules: [pu], a: pu, b: pu, special: this.grille[pu.r][pu.c].special };
     const rang = { couleur: 4, bombe: 3, ligneH: 2, ligneV: 2, cloche: 1 };
     let meilleur = null, score = -1;
@@ -904,7 +1192,8 @@ class Board {
       if (!this.jouable(b.r, b.c) || !this.echangeValide(a, b)) continue;
       this.echanger(a, b);
       const motifs = this.trouverMatches();
-      const touchObjectif = motifs.some(m => m.cases.some(x => typesObjectifs.includes(this.grille[x.r][x.c].type)));
+      const touchObjectif = motifs.some(m => m.cases.some(x => typesObjectifs.includes(this.grille[x.r][x.c].type)) ||
+        this.toucheBloqueurs(m.cases, bloqueursObjectifs));
       this.echanger(a, b);
       let sc = 1, type = "simple", sp = null;
       const best = Math.max(0, ...motifs.map(m => rang[m.special] || 0));
@@ -917,7 +1206,7 @@ class Board {
 
   /** Mélange en conservant les pièces (specials compris), sans match et avec un coup possible. */
   melanger() {
-    const cases = this.cases(), pieces = cases.map(({ r, c }) => this.grille[r][c]);
+    const cases = this.cases().filter(({ r, c }) => !this.fixe(r, c)), pieces = cases.map(({ r, c }) => this.grille[r][c]);
     for (let essai = 0; essai < 200; essai++) {
       for (let i = pieces.length - 1; i > 0; i--) {
         const j = Math.floor(this.rng() * (i + 1)); [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
@@ -1004,12 +1293,32 @@ class Renderer {
   dessiner(temps) {
     const g = this.ctx, K = CONFIG.couleurs, j = this.jeu, b = j.board, T = this.taille;
     g.fillStyle = K.fond; g.fillRect(0, 0, this.w, this.h);
+    const bg = Visuels.imageFond();
+    if (bg) {   // fond terrasse en « cover » : rempli sans déformation, centré
+      const e = Math.max(this.w / bg.naturalWidth, this.h / bg.naturalHeight), bw = bg.naturalWidth * e, bh = bg.naturalHeight * e;
+      g.drawImage(bg, (this.w - bw) / 2, (this.h - bh) / 2, bw, bh);
+    }
     this.dessinerHUD();
     // Plateau (damier crème)
-    g.fillStyle = "#8a5a3b"; this.rectArrondi(this.ox-8, this.oy-8, T*b.C+16, T*b.L+16, 18); g.fill();
+    // Panneau crème semi-opaque sous la grille (validé ChefLead) : lisibilité sur le fond terrasse
+    g.fillStyle = "rgba(255,244,224,.82)"; this.rectArrondi(this.ox-8, this.oy-8, T*b.C+16, T*b.L+16, 18); g.fill();
+    g.strokeStyle = "rgba(200,131,74,.9)"; g.lineWidth = 3; g.stroke();
     for (let r = 0; r < b.L; r++) for (let c = 0; c < b.C; c++) {
-      g.fillStyle = !b.jouable(r, c) ? "#8a5a3b" : (r + c) % 2 ? K.case2 : K.case1;
-      g.fillRect(this.ox + c*T, this.oy + r*T, T, T);
+      if (!b.jouable(r, c)) continue;   // case vide '#' : on voit le panneau
+      g.fillStyle = (r + c) % 2 ? K.case2 : K.case1; g.globalAlpha = .75;
+      g.fillRect(this.ox + c*T, this.oy + r*T, T, T); g.globalAlpha = 1;
+      const n = b.sol[r][c];   // couche « sol » : nappe sale (rouge, plus foncée à 2 couches)
+      if (n) {
+        g.fillStyle = n.hp > 1 ? "rgba(178,34,52,.75)" : "rgba(226,86,86,.5)";
+        this.rectArrondi(this.ox + c*T + 2, this.oy + r*T + 2, T - 4, T - 4, 6); g.fill();
+        g.strokeStyle = "rgba(255,255,255,.55)"; g.lineWidth = 1;
+        for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(this.ox + c*T + i*T/4, this.oy + r*T + 3); g.lineTo(this.ox + c*T + i*T/4, this.oy + r*T + T - 3); g.stroke();
+          g.beginPath(); g.moveTo(this.ox + c*T + 3, this.oy + r*T + i*T/4); g.lineTo(this.ox + c*T + T - 3, this.oy + r*T + i*T/4); g.stroke(); }
+      }
+    }
+    if (b.platsInit.length) {   // flèches de livraison sous le plateau
+      g.fillStyle = "#fff4e0"; g.font = "bold 12px Trebuchet MS"; g.textAlign = "center"; g.textBaseline = "middle";
+      for (let c = 0; c < b.C; c++) g.fillText("⬇", this.ox + (c + .5)*T, this.oy + b.L*T + 4);
     }
     // Sélection
     if (j.selection) {
@@ -1031,6 +1340,7 @@ class Renderer {
     for (let r = 0; r < b.L; r++) for (let c = 0; c < b.C; c++) if (b.grille[r][c]) dessinerPiece(b.grille[r][c]);
     j.fantomes.forEach(dessinerPiece);  // pièces en train de disparaître
     g.restore();
+    this.dessinerBloqueurs(temps);
     // Cloches en vol
     j.cloches.forEach(v => {
       g.save(); g.translate(this.ox + (v.x + .5)*T, this.oy + (v.y + .5)*T); g.scale(v.echelle, v.echelle); g.rotate(Math.sin(v.x * 3) * .3);
@@ -1054,6 +1364,37 @@ class Renderer {
       g.restore();
     }
   }
+  /** Couches « case » (assiette, carton, casserole) et « dessus » (glace, chaîne) + PV restants. */
+  dessinerBloqueurs(temps) {
+    const g = this.ctx, b = this.jeu.board, T = this.taille, emo = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    const badge = (x, y, hp) => { if (hp < 2) return;
+      g.fillStyle = "#5a3220"; g.beginPath(); g.arc(x + T*.78, y + T*.22, T*.16, 0, Math.PI*2); g.fill();
+      g.fillStyle = "#fff"; g.font = `bold ${Math.floor(T*.22)}px Trebuchet MS`; g.fillText(hp, x + T*.78, y + T*.23); };
+    g.textAlign = "center"; g.textBaseline = "middle";
+    for (let r = 0; r < b.L; r++) for (let c = 0; c < b.C; c++) {
+      const x = this.ox + c*T, y = this.oy + r*T, bl = b.bloc[r][c], de = b.dessus[r][c];
+      if (bl) {
+        g.fillStyle = { assiette: "#f7f3ea", carton: "#c9965f", casserole: "#9aa4ad" }[bl.type] || "#ddd";
+        this.rectArrondi(x + 3, y + 3, T - 6, T - 6, 9); g.fill();
+        g.strokeStyle = "#8a5a3b"; g.lineWidth = 2; g.stroke();
+        g.font = `${Math.floor(T*.6)}px ${emo}`; g.fillText(BLOQUEURS[bl.type].emoji, x + T/2, y + T*.54);
+        badge(x, y, bl.hp);
+      }
+      if (de) {
+        if (de.type === "glace") {
+          g.fillStyle = de.hp > 1 ? "rgba(120,190,255,.62)" : "rgba(170,220,255,.48)";
+          this.rectArrondi(x + 3, y + 3, T - 6, T - 6, 9); g.fill();
+          g.strokeStyle = "#e8f6ff"; g.lineWidth = 2; g.stroke();
+          g.font = `${Math.floor(T*.28)}px ${emo}`; g.fillText("❄️", x + T*.22, y + T*.22);
+        } else {
+          g.strokeStyle = "#5b5b66"; g.lineWidth = Math.max(2, T*.07);
+          g.beginPath(); g.moveTo(x + 5, y + 5); g.lineTo(x + T - 5, y + T - 5); g.moveTo(x + T - 5, y + 5); g.lineTo(x + 5, y + T - 5); g.stroke();
+          g.font = `${Math.floor(T*.34)}px ${emo}`; g.fillText("⛓️", x + T/2, y + T/2);
+        }
+        badge(x, y, de.hp);
+      }
+    }
+  }
   dessinerPiece(p, cx, cy, echelle, alpha, temps) {
     const g = this.ctx, T = this.taille * echelle;
     g.save(); g.globalAlpha = alpha; g.translate(cx, cy);
@@ -1075,8 +1416,10 @@ class Renderer {
     }
     g.font = `${Math.floor(T * (p.special ? .55 : .7))}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
     g.textAlign = "center"; g.textBaseline = "middle";
-    const emoji = p.special === "couleur" ? POWERUPS.couleur.emoji : CONFIG.types[p.type];
-    g.fillText(emoji, 0, T * .04);
+    const emoji = p.plat ? PLAT.emoji : p.special === "couleur" ? POWERUPS.couleur.emoji : CONFIG.types[p.type];
+    const img = !p.plat && p.special !== "couleur" && p.type >= 0 ? Visuels.piece(CONFIG.cles[p.type]) : null;
+    if (img) { const s = T * (p.special ? .66 : .86); g.drawImage(img, -s/2, -s/2, s, s); }   // PNG 512 réduit
+    else g.fillText(emoji, 0, T * .04);                                                       // repli emoji
     if (p.special && p.special !== "couleur") { // icône du power-up (🔪 / 🍳) en coin
       g.font = `${Math.floor(T*.32)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
       g.fillText(POWERUPS[p.special].emoji, T*.24, -T*.24);
@@ -1087,7 +1430,7 @@ class Renderer {
     const g = this.ctx, K = CONFIG.couleurs, j = this.jeu;
     g.fillStyle = K.hud; this.rectArrondi(10, 12, this.w - 20, 116, 20); g.fill();
     g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = K.texte;
-    g.font = "bold 18px Trebuchet MS"; g.fillText("👨‍🍳 Chef Match – Niveau " + j.niveau.id, this.w/2, 32);
+    g.font = "bold 18px Trebuchet MS"; g.fillText("👨‍🍳 Chef Match – " + (j.niveau.id === "demo" ? "Démo bloqueurs" : "Niveau " + j.niveau.id), this.w/2, 32);
     // Coups restants
     g.fillStyle = K.accent; this.rectArrondi(22, 50, 84, 66, 14); g.fill();
     g.fillStyle = "#fff"; g.font = "12px Trebuchet MS"; g.fillText("COUPS", 64, 64);
@@ -1097,7 +1440,8 @@ class Renderer {
     j.objectifs.forEach((o, i) => {
       const cx = zoneX + zoneW * (i + .5) / n;
       g.font = '32px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
-      g.fillText(CONFIG.types[o.type], cx, 76);
+      const io = o.genre === "collect" ? Visuels.piece(o.cle) : null;
+      if (io) g.drawImage(io, cx - 20, 56, 40, 40); else g.fillText(o.emoji || CONFIG.types[o.type], cx, 76);
       g.fillStyle = o.restant === 0 ? "#4e9a3a" : K.texte; g.font = "bold 18px Trebuchet MS";
       g.fillText(o.restant === 0 ? "✔" : o.restant, cx, 108); g.fillStyle = K.texte;
     });
@@ -1178,25 +1522,43 @@ class Game {
   }
   /** Lance le niveau NIVEAUX[index] (format MatchDesign). */
   demarrer(index = this.indexNiveau) {
-    this.indexNiveau = Math.max(0, Math.min(NIVEAUX.length - 1, index));
-    const N = this.niveau = NIVEAUX[this.indexNiveau];
+    // index -1 (ou "demo") = niveau de démonstration des bloqueurs
+    if (index === "demo" || index === -1) this.indexNiveau = -1;
+    else this.indexNiveau = Math.max(0, Math.min(NIVEAUX.length - 1, index));
+    const N = this.niveau = this.indexNiveau < 0 ? NIVEAU_DEMO : NIVEAUX[this.indexNiveau];
     CONFIG.types = N.colors.map(k => PIECES[k] || "❓");     // type i = N.colors[i]
+    CONFIG.cles = N.colors.slice();                          // type i -> id de pièce (= nom du PNG)
     const grid = N.grid || null;
-    this.board = new Board(grid ? grid.length : 8, grid ? grid[0].length : 8, N.colors.length, Math.random, grid);
+    this.board = new Board(grid ? grid.length : 8, grid ? grid[0].length : 8, N.colors.length, Math.random, grid, N.blockers || null);
     this.coups = N.moves;
-    this.objectifs = N.goals.filter(g => g.type === "collect")
-      .map(g => ({ type: N.colors.indexOf(g.piece), cle: g.piece, restant: g.count }))
-      .filter(o => o.type >= 0);
+    // Objectifs : collect (v4) + blocker / deliver (v5). type = -100 pour les objectifs non-pièce.
+    this.objectifs = N.goals.map(g => {
+      if (g.type === "collect") return { genre: "collect", type: N.colors.indexOf(g.piece), cle: g.piece, restant: g.count, emoji: PIECES[g.piece] };
+      if (g.type === "blocker" && BLOQUEURS[g.blocker]) return { genre: "bloqueur", type: -100, cle: g.blocker, tous: g.count == null,
+        restant: g.count == null ? this.board.compterBloqueurs(g.blocker) : g.count, emoji: BLOQUEURS[g.blocker].emoji };
+      if (g.type === "deliver") return { genre: "livraison", type: -100, cle: "plat", restant: g.count == null ? this.board.platsInit.length : g.count, emoji: PLAT.emoji };
+      return null;
+    }).filter(o => o && (o.genre !== "collect" || o.type >= 0));
     this.etat = ETAT.IDLE; this.selection = null; this.message = null; this.fantomes = [];
     this.vues = new WeakMap(); this.indice = null; this.tutoCoup = null; this.rush = null; this.puVus = new Set();
     // Tutoriel scripté : grille préparée + coup imposé surligné
     const tuto = N.tutorial && TUTOS[N.tutorial];
     if (tuto) { const coup = this.board.preparerTuto(tuto); if (coup) { this.indice = coup; this.tutoCoup = coup; } }
-    this.afficherMessage(this.objectifs.map(o => txt("goal.collect", { count: o.restant, piece: txt("piece." + o.cle) })).join("\n"), 2200);
+    this.afficherMessage(this.objectifs.map(o => this.texteObjectif(o)).join("\n"), 2200);
     this.log = new PlaytestLog(this); this.sessions.push(this.log.data);
     this.board.grille.forEach((ligne, r) => ligne.forEach((p, c) => { if (!p) return; const v = this.vue(p); v.x = c; v.y = r; }));
     if (this.renderer) this.renderer.redimensionner();
   }
+  texteObjectif(o) {
+    if (o.genre === "bloqueur") return txt(o.tous ? "goal.blocker.all" : "goal.blocker", { count: o.restant, blocker: BLOQUEURS[o.cle].nom });
+    if (o.genre === "livraison") return txt("goal.deliver", { count: o.restant, plats: PLAT.nom });
+    return txt("goal.collect", { count: o.restant, piece: txt("piece." + o.cle) });
+  }
+  /** Types de pièces encore à collecter / bloqueurs encore à éliminer (pour l'indice, la cloche et le bot). */
+  typesObjectifs() { return this.objectifs.filter(o => o.restant > 0 && o.genre !== "bloqueur" && o.genre !== "livraison").map(o => o.type); }
+  bloqueursObjectifs() { return this.objectifs.filter(o => o.restant > 0 && (o.genre === "bloqueur" || o.genre === "livraison")).map(o => o.genre === "livraison" ? "plat" : o.cle); }
+  /** Objectifs « tous » (sans count) : recalculés sur le plateau. */
+  majObjectifsDynamiques() { this.objectifs.forEach(o => { if (o.tous) o.restant = this.board.compterBloqueurs(o.cle); }); }
   /** État visuel d'une pièce (créé à la volée). */
   vue(p) {
     if (!this.vues.has(p)) this.vues.set(p, { x: 0, y: 0, echelle: 1, alpha: 1 });
@@ -1228,7 +1590,7 @@ class Game {
     if (this.indiceAuto || this.indiceEvalue || t - (this.idleDepuis || t) < CONFIG.delaiIndice) return;
     // Règle v0.2.6 : indice UNIQUEMENT quand il reste <= 3 coups (compteur), après 15 s d'inactivité
     if (this.coups > CONFIG.indiceCoupsMax) return;
-    const coup = this.board.meilleurCoup(this.objectifs.filter(o => o.restant > 0).map(o => o.type));
+    const coup = this.board.meilleurCoup(this.typesObjectifs(), this.bloqueursObjectifs());
     if (!coup) return;
     this.indiceAuto = coup;
     this.log.evenement("hint_shown");
@@ -1239,8 +1601,9 @@ class Game {
   /** Activation d'un power-up par double-tap (sans échange) : compte comme un coup. */
   async activerPowerUp(cs) {
     const p = this.board.get(cs.r, cs.c);
-    if (!this.peutJouer() || !p || !p.special) return;
+    if (!this.peutJouer() || !p || !p.special || !this.board.peutActiver(cs.r, cs.c)) return;
     this.changerEtat(ETAT.RESOLVING);
+    this.board.casseroleTouchee = false;
     this.log.coup(cs, cs, p, p);
     const dernier = this.log.data.coups[this.log.data.coups.length - 1]; dernier.doubleTap = true; dernier.coupPossibleAvant = true;
     this.log.evenement("double_tap_activation");
@@ -1277,6 +1640,7 @@ class Game {
     if (T) { this.tutoCoup = null; this.indice = null; }
     B.echanger(a, b);
     this.coups--;
+    B.casseroleTouchee = false;
     this.changerEtat(ETAT.RESOLVING);
     // Après l'échange : pa est en b, pb est en a
     await this.resoudreEchange(b, pa, a, pb);
@@ -1344,15 +1708,22 @@ class Game {
       if (groupes.length === 0) break;
       this.changerEtat(ETAT.RESOLVING);
       const { cases, creations } = this.board.analyserMatches(groupes, premier ? casesEchangees : []);
-      await this.executerEffacement(cases, creations);
+      await this.executerEffacement(cases, creations, new Map(), { match: true });
       await this.faireTomber();
       premier = false;
     }
   }
 
   /** Efface (logique) puis anime pop + particules, compte les objectifs. */
-  async executerEffacement(cases, creations = [], cles = new Map()) {
-    const { effacees, crees, vols } = this.board.effacer(cases, creations, cles);
+  async executerEffacement(cases, creations = [], cles = new Map(), opts = {}) {
+    const { effacees, crees, vols, bloqueurs } = this.board.effacer(cases, creations, cles, opts);
+    // v0.3 : bloqueurs détruits -> objectifs ; PV perdus -> petit éclat
+    (bloqueurs || []).forEach(e => {
+      if (e.detruit) { const o = this.objectifs.find(o => o.genre === "bloqueur" && o.cle === e.type && !o.tous); if (o && o.restant > 0) o.restant--; }
+      if (this.log && this.log.powerUp) this.log.powerUp("bloqueurs", e.type + (e.detruit ? "_detruit" : "_pv"));
+      this.eclat(e.r, e.c, e.type === "glace" ? "#bfe6ff" : e.type === "nappe" ? "#e25656" : "#d9c2a0");
+    });
+    if (bloqueurs && bloqueurs.length) this.majObjectifsDynamiques();
     crees.forEach(({ piece }) => {
       this.log.powerUp("crees", piece.special);
       const cle = POWERUPS[piece.special].cle;   // 1re apparition dans la partie : nom + description
@@ -1376,9 +1747,9 @@ class Game {
 
   /** Envol des cloches : animation vers la cible, puis effacement (avec power-up porté éventuel). */
   async traiterVols(vols) {
-    const B = this.board, types = this.objectifs.filter(o => o.restant > 0).map(o => o.type), exclus = new Set(), cibles = [];
+    const B = this.board, types = this.typesObjectifs(), blocs = this.bloqueursObjectifs(), exclus = new Set(), cibles = [];
     await Promise.all(vols.map(v => {
-      const cible = B.choisirCible(v, types, exclus);
+      const cible = B.choisirCible(v, types, exclus, blocs);
       if (!cible) return Promise.resolve();
       exclus.add(cible.r * B.C + cible.c); cibles.push({ ...cible, porte: v.porte });
       const sprite = { x: v.c, y: v.r, echelle: 1, porte: v.porte };
@@ -1388,9 +1759,15 @@ class Game {
         .then(() => this.animator.tween(sprite, { x: cible.c, y: cible.r, echelle: 1 }, 380, Easing.sortieQuad))
         .then(() => { this.cloches = this.cloches.filter(s => s !== sprite); });
     }));
-    cibles.forEach(c => { const p = B.grille[c.r][c.c]; if (p && c.porte) p.special = c.porte; });
+    cibles.forEach(c => { const p = B.grille[c.r][c.c]; if (p && c.porte && !p.plat) p.special = c.porte; });
     this.dernieresCibles = cibles;
     if (cibles.length) await this.executerEffacement(cibles);
+  }
+  /** Particules sur une case (dégât de bloqueur). */
+  eclat(r, c, couleur) {
+    const R = this.renderer; if (!R) return;
+    for (let i = 0; i < 6; i++) this.particules.push({ x: R.ox + (c + .5) * R.taille, y: R.oy + (r + .5) * R.taille,
+      vx: (Math.random() - .5) * .5, vy: (Math.random() - .8) * .5, vie: 1, taille: 2 + Math.random() * 3, couleur });
   }
   animerDisparition(piece) {
     const v = this.vue(piece), R = this.renderer;
@@ -1408,13 +1785,25 @@ class Game {
   /** Gravité + remplissage animés (easing avec rebond). */
   async faireTomber() {
     this.changerEtat(ETAT.FALLING);
-    const mvts = [...this.board.appliquerGravite(), ...this.board.remplir()];
-    await Promise.all(mvts.map(m => {
+    const chute = () => Promise.all([...this.board.appliquerGravite(), ...this.board.remplir()].map(m => {
       const v = this.vue(m.piece); v.x = m.c;
       if (m.deR < 0) { v.y = m.deR; v.echelle = 1; v.alpha = 1; }
       const dist = m.versR - v.y;
       return this.animator.tween(v, { y: m.versR }, 120 + CONFIG.durees.chuteParCase * dist, Easing.sortieRebond);
     }));
+    await chute();
+    // v0.3 : livraison des plats arrivés en bas, puis nouvelle chute
+    let sortis, garde = 0;
+    while ((sortis = this.board.collecterPlats()).length && garde++ < 20) {
+      sortis.forEach(({ piece }) => {
+        const o = this.objectifs.find(o => o.genre === "livraison"); if (o && o.restant > 0) o.restant--;
+        if (this.log && this.log.powerUp) this.log.powerUp("livraisons", "plat");
+        this.fantomes.push(piece);
+      });
+      await Promise.all(sortis.map(({ piece }) => this.animator.tween(this.vue(piece), { y: this.vue(piece).y + 1, alpha: 0 }, 260, Easing.entreeQuad)));
+      this.fantomes = [];
+      await chute();
+    }
     this.changerEtat(ETAT.RESOLVING);
   }
 
@@ -1424,6 +1813,12 @@ class Game {
     if (this.objectifs.every(o => o.restant === 0)) {
       this.coupsAvantRush = this.coups;      // meilleur résultat = coups restants AVANT le bonus
       await this.sweetRush(); return this.terminer(true);
+    }
+    // v0.3 : casseroles non touchées pendant le coup -> débordement sur une pièce voisine
+    const deb = this.board.propagerCasseroles();
+    if (deb) {
+      this.majObjectifsDynamiques(); this.eclat(deb.r, deb.c, "#9aa4ad");
+      if (this.log && this.log.evenement) this.log.evenement("casserole_propagation");
     }
     if (this.coups <= 0) return this.terminer(false);
     const possible = this.board.aUnCoupPossible();
@@ -1451,7 +1846,7 @@ class Game {
     await pause(700);
     const B = this.board;
     while (this.coups > 0) {
-      const libres = B.cases().filter(({ r, c }) => B.grille[r][c] && !B.grille[r][c].special);
+      const libres = B.cases().filter(({ r, c }) => B.grille[r][c] && !B.grille[r][c].special && !B.grille[r][c].plat && !B.fixe(r, c));
       if (!libres.length) break;
       const { r, c } = libres[Math.floor(Math.random() * libres.length)];
       const p = B.grille[r][c];
@@ -1503,12 +1898,18 @@ class Game {
     this.changerEtat(ETAT.END);
     this.log.fin(victoire ? "victoire" : "defaite");
     if (victoire) this.log.data.coupsRestantsAvantBonus = this.coupsAvantRush;
-    Progres.enregistrer(this.indexNiveau, this.niveau.id, victoire, victoire ? this.coupsAvantRush : 0);
+    if (this.indexNiveau >= 0) Progres.enregistrer(this.indexNiveau, this.niveau.id, victoire, victoire ? this.coupsAvantRush : 0);
+    this.etoilesGagnees = victoire && this.indexNiveau >= 0 ? Economie.gagnerEtoilesNiveau(this.niveau.id) : 0;
     UI.afficherFin(victoire, this);
   }
   /** Bouton « +5 coups » */
   async continuer() {
-    this.log.evenement("plus5"); this.coups += 5; UI.cacher(); this.changerEtat(ETAT.IDLE);
+    // v0.3.1 : passe par le module Economie (gratuit pour l'instant, mais journalisé)
+    const r = Economie.proposerOffre("plus5coups", { niveau: this.niveau.id, coupsJoues: this.log.data.coupsJoues });
+    if (!r.accorde) return;
+    this.log.evenement("plus5");
+    Object.assign(this.log.data.evenements[this.log.data.evenements.length - 1], { offre: r.offre, gratuit: r.gratuit, prixOr: r.prixOr });
+    this.coups += r.coups; UI.cacher(); this.changerEtat(ETAT.IDLE);
     await this.melangerSiBesoin("apres_plus5");   // FIX : la grille pouvait être bloquée au moment de la défaite
   }
   rejouer() { if (!this.log.data.resultat) this.log.fin("abandon"); UI.cacher(); this.demarrer(); }
@@ -1527,7 +1928,7 @@ class Game {
   }
   debugIndice() { this.indice = this.board.trouverCoupPossible(); }
   debugPoserSpecial(cs, special) {
-    const p = this.board.get(cs.r, cs.c); if (!p) return;
+    const p = this.board.get(cs.r, cs.c); if (!p || p.plat) return;
     if (special === "couleur") p.type = -1; else if (p.type < 0) p.type = this.board.typeAleatoire();
     p.special = special; this.debug.placer = null; this.log.evenement("debug_place_" + special);
     DebugUI.maj();
@@ -1584,8 +1985,8 @@ async function copierTexte(txt) {
 const UI = {
   afficherFin(victoire, jeu) {
     document.getElementById("titreFin").textContent = (victoire ? "🎉 " : "🔥 ") + txt(victoire ? "win.title" : "lose.title");
-    document.getElementById("texteFin").textContent = victoire ? txt("win.text")
-      : txt("lose.text") + "\nIl reste : " + jeu.objectifs.filter(o => o.restant > 0).map(o => o.restant + " " + CONFIG.types[o.type]).join(", ");
+    document.getElementById("texteFin").textContent = victoire ? txt("win.text") + (jeu.etoilesGagnees ? "\n⭐ +" + jeu.etoilesGagnees + " étoile (total " + Economie.etoiles() + ")" : "")
+      : txt("lose.text") + "\nIl reste : " + jeu.objectifs.filter(o => o.restant > 0).map(o => o.restant + " " + (o.emoji || CONFIG.types[o.type])).join(", ");
     const p5 = document.getElementById("btnPlus5"), sv = document.getElementById("btnSuivant"), rj = document.getElementById("btnRejouer");
     p5.textContent = txt("lose.extra_moves"); sv.textContent = txt("win.button");
     rj.textContent = victoire ? "Rejouer" : txt("lose.retry");
@@ -1621,6 +2022,7 @@ const DebugUI = {
     const sel = document.getElementById("dbgNiveau");
     NIVEAUX.forEach((n, i) => { const o = document.createElement("option"); o.value = i;
       o.textContent = `N${n.id} · ${n.moves} coups${n.tutorial ? " · tuto " + n.tutorial : ""}`; sel.appendChild(o); });
+    { const o = document.createElement("option"); o.value = -1; o.textContent = "🧪 Démo bloqueurs"; sel.appendChild(o); }
     sel.onchange = () => jeu.allerNiveau(+sel.value);
     setInterval(() => this.majStat(), 250); this.maj();
   },
@@ -1637,7 +2039,7 @@ const DebugUI = {
       `coups joués ${d.coupsJoues}  invalides ${d.echangesInvalides}\ncréés ${JSON.stringify(d.powerUps.crees)}\nactivés ${JSON.stringify(d.powerUps.actives)}`;
   },
   async copierLog(btn) {
-    const txt = JSON.stringify({ version: VERSION, stockage: Store.persistant ? "localStorage" : "mémoire", sessions: Logs.tous() }, null, 2);
+    const txt = JSON.stringify({ version: VERSION, stockage: Store.persistant ? "localStorage" : "mémoire", economie: Economie.lire(), sessions: Logs.tous() }, null, 2);
     const ok = await copierTexte(txt), ancien = btn.textContent;
     btn.textContent = ok ? "✔ Copié !" : "✖ Échec copie"; setTimeout(() => btn.textContent = ancien, 1200);
   }
@@ -1654,7 +2056,7 @@ const Menu = {
       const b = document.createElement("button"), ok = i < p.debloques, m = p.meilleurs[n.id];
       b.className = "carteNiv" + (ok ? "" : " verrou") + (m && m.victoires ? " gagne" : "");
       b.dataset.index = i; b.disabled = !ok;
-      b.innerHTML = `<b>${ok ? "" : "🔒 "}Niveau ${n.id}</b><div class="obj">${n.goals.map(o => (PIECES[o.piece] || "") + "×" + o.count).join(" ")}</div>` +
+      b.innerHTML = `<b>${ok ? "" : "🔒 "}Niveau ${n.id}</b><div class="obj">${n.goals.map(o => emojiObjectif(o) + "×" + (o.count ?? "tous")).join(" ")}</div>` +
         `<div class="best">${!ok ? "Verrouillé" : m && m.victoires ? "⭐ Meilleur : " + m.meilleursCoupsRestants + " coup(s) restant(s)" : n.moves + " coups · pas encore réussi"}</div>`;
       if (ok) b.onclick = () => this.choisir(i);
       g.appendChild(b);
@@ -1686,8 +2088,9 @@ const Intro = {
  * 8. DÉMARRAGE (uniquement dans un navigateur ; sous Node on exporte la logique)
  * ===================================================================== */
 if (typeof document !== "undefined" && document.getElementById("jeu")) {
-  const m = /[?&]niveau=(\d+)/.exec(location.search);   // ?niveau=4 pour aller directement au niveau 4
-  const jeu = new Game(document.getElementById("jeu"), m ? NIVEAUX.findIndex(n => n.id === +m[1]) : 0);
+  Visuels.charger();
+  const m = /[?&]niveau=(\d+|demo)/.exec(location.search);   // ?niveau=4 (niveau 4) ou ?niveau=demo (démo des bloqueurs)
+  const jeu = new Game(document.getElementById("jeu"), !m ? 0 : m[1] === "demo" ? -1 : NIVEAUX.findIndex(n => n.id === +m[1]));
   document.getElementById("btnPlus5").onclick = () => jeu.continuer();
   document.getElementById("btnRejouer").onclick = () => jeu.rejouer();
   document.getElementById("btnSuivant").onclick = () => jeu.niveauSuivant();
@@ -1699,7 +2102,7 @@ if (typeof document !== "undefined" && document.getElementById("jeu")) {
   DebugUI.init(jeu);
   window.chefMatch = jeu; // accès debug depuis la console
 }
-if (typeof module !== "undefined") module.exports = { Game, ETAT, categorie, Store, Logs, Progres, Board, creerPiece, CONFIG, NIVEAUX, TEXTES, PIECES, TUTOS, BONUS_FIN, txt };
+if (typeof module !== "undefined") module.exports = { Game, ETAT, categorie, Store, Logs, Progres, Board, creerPiece, creerPlat, CONFIG, NIVEAUX, NIVEAU_DEMO, BLOQUEURS, TYPE_PLAT, Economie, CONFIG_ECONOMIE, Visuels, TEXTES, PIECES, TUTOS, BONUS_FIN, txt };
 </script>
 </body>
 </html>
