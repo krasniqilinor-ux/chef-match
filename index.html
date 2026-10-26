@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Chef Match – v0.2.1</title>
+<style>
+  html,body{margin:0;height:100%;background:#3b2418;overflow:hidden;touch-action:none;
+    font-family:"Trebuchet MS",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
+  canvas{display:block;margin:0 auto;touch-action:none}
+  /* Écran de fin */
+  #overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(40,20,10,.6)}
+  #overlay.show{display:flex}
+  #panel{background:#fff4e0;border:4px solid #c8834a;border-radius:22px;padding:24px 28px;
+    text-align:center;min-width:240px;box-shadow:0 10px 30px rgba(0,0,0,.4);color:#5a3220;
+    animation:pop .35s ease-out}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  #panel h1{margin:0 0 6px;font-size:30px}
+  #panel p{margin:4px 0 16px;font-size:16px;white-space:pre-line;max-width:280px}
+  #panel button{display:block;width:100%;margin:8px 0;padding:12px;font-size:18px;font-weight:bold;
+    border:none;border-radius:14px;cursor:pointer;color:#fff;background:#e0703a;box-shadow:0 4px 0 #a64a20}
+  #panel button.alt{background:#7aa35a;box-shadow:0 4px 0 #4e7336}
+  #panel button:active{transform:translateY(3px);box-shadow:none}
+  /* Écran de sélection des niveaux + intro */
+  .ecran{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;background:#3b2418;z-index:11;overflow:auto}
+  .ecran.show{display:flex}
+  #ecranNiveaux h1{color:#fff4e0;margin:22px 0 4px;font-size:28px}
+  #ecranNiveaux .sous{color:#f1d3a5;margin-bottom:12px;font-size:14px}
+  #grilleNiveaux{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:min(92vw,420px);padding-bottom:20px}
+  .carteNiv{background:#fff4e0;border:3px solid #c8834a;border-radius:16px;padding:10px;text-align:left;color:#5a3220;cursor:pointer;font-family:inherit}
+  .carteNiv b{font-size:17px}.carteNiv .obj{font-size:20px;margin:4px 0}.carteNiv .best{font-size:12px}
+  .carteNiv.verrou{background:#7a5a48;border-color:#5a3c2c;color:#c9b29e;cursor:not-allowed}
+  .carteNiv.gagne{border-color:#7aa35a}
+  #btnNiveaux{position:fixed;left:8px;bottom:8px;z-index:3;border:none;border-radius:12px;padding:8px 12px;background:#c8834a;color:#fff;font-weight:bold;font-family:inherit;cursor:pointer}
+  #intro{justify-content:center;background:rgba(40,20,10,.88);cursor:pointer;z-index:12}
+  #bulle{background:#fff4e0;border:4px solid #c8834a;border-radius:22px;padding:20px 22px;max-width:320px;color:#5a3220;font-size:18px;line-height:1.4;position:relative;animation:pop .3s ease-out}
+  #bulle:after{content:"";position:absolute;left:40px;bottom:-18px;border:10px solid transparent;border-top-color:#c8834a}
+  #introAide{color:#f1d3a5;margin-top:22px;font-size:13px}
+  #btnPasser{position:fixed;right:12px;bottom:12px;border:none;border-radius:12px;padding:10px 16px;background:#e0703a;color:#fff;font-weight:bold;font-family:inherit;cursor:pointer}
+  #version{position:fixed;right:6px;bottom:4px;font-size:11px;color:rgba(255,244,224,.55);pointer-events:none}
+  /* Panneau debug */
+  #debug{position:fixed;top:6px;right:6px;display:none;background:rgba(30,15,8,.92);color:#fff4e0;
+    border:2px solid #c8834a;border-radius:12px;font-size:12px;width:178px;z-index:10}
+  #debug.show{display:block}
+  #debug .tete{padding:6px 8px;cursor:pointer;font-weight:bold;display:flex;justify-content:space-between}
+  #debug .corps{padding:0 8px 8px}
+  #debug.replie .corps{display:none}
+  #debug button{margin:2px 0;width:49%;padding:5px 2px;font-size:11px;border:none;border-radius:6px;background:#e0703a;color:#fff;cursor:pointer}
+  #debug button.on{background:#7aa35a}
+  #debug .stat{font-family:monospace;font-size:10px;margin:4px 0;white-space:pre-wrap;word-break:break-all}
+  #debug .titre{margin-top:4px;opacity:.7}
+  #btnLogFin{background:#8a5a3b !important;box-shadow:0 4px 0 #5a3220 !important;font-size:14px !important;padding:8px !important}
+</style>
+</head>
+<body>
+<canvas id="jeu"></canvas>
+<div id="overlay"><div id="panel">
+  <h1 id="titreFin"></h1><p id="texteFin"></p>
+  <button id="btnSuivant">Continuer</button>
+  <button id="btnPlus5">+5 coups</button>
+  <button id="btnRejouer" class="alt">Rejouer</button>
+  <button id="btnNiveauxFin" class="alt">☰ Niveaux</button>
+  <button id="btnLogFin">📋 Copier le log</button>
+</div></div>
+
+<div id="version">v0.2.1</div>
+<button id="btnNiveaux">☰ Niveaux</button>
+<div id="ecranNiveaux" class="ecran"><h1>👨‍🍳 Chef Match</h1><div class="sous">La Petite Marée – choisis un niveau</div><div id="grilleNiveaux"></div></div>
+<div id="intro" class="ecran"><div id="bulle"></div><div id="introAide">Touche pour continuer</div><button id="btnPasser">Passer ⏭</button></div>
+<div id="debug"><div class="tete" id="dbgTete"><span>🛠 Debug</span><span id="dbgFleche">▾</span></div>
+ <div class="corps">
+  <div class="stat" id="dbgStat">FPS -- | IDLE</div>
+  <button data-a="gagner">Gagner</button><button data-a="perdre">Perdre</button>
+  <button data-a="plus5">+5 coups</button><button data-a="melanger">Mélanger</button>
+  <button data-a="indice">Indice</button><button data-a="ralenti" id="dbgRalenti">Ralenti x0.25</button>
+  <div class="titre">Placer au prochain clic :</div>
+  <button data-p="ligneH">Couteau H</button><button data-p="ligneV">Couteau V</button>
+  <button data-p="bombe">Poêle</button><button data-p="couleur">Étoile</button>
+  <button data-p="cloche">Cloche</button>
+  <div class="titre">Niveau :</div>
+  <select id="dbgNiveau" style="width:100%;margin:2px 0"></select>
+  <button data-a="log">📋 Copier le log</button><button data-a="effacerLogs">🗑 Effacer les logs</button>
+  <button data-a="toutDebloquer">🔓 Tout débloquer</button><button data-a="resetProgres">↺ Reset progression</button>
+  <div class="stat" id="dbgInfo"></div>
+ </div></div>
+<script>
+"use strict";
+/* =====================================================================
+ * 1. CONFIGURATION & NIVEAU (données pures, futur fichier JSON)
+ * ===================================================================== */
+const VERSION = "v0.2.1";
+const CONFIG = {
+  types: ["🍕","🍔","🍣","🥐","🍩","🥗"], // index = type de pièce
+  durees: { swap: 160, rebond: 130, pop: 180, chuteParCase: 70, spawn: 160 }, // ms
+  seuilSwipe: 0.3,          // fraction de case pour déclencher un swipe
+  couleurs: { fond:"#3b2418", plateau:"#f3d9b1", case1:"#fbe8c8", case2:"#f1d3a5",
+              hud:"#fff4e0", texte:"#5a3220", accent:"#e0703a", selection:"#ffb347" }
+};
+
+/* --- Données MatchDesign embarquées telles quelles (/workspace/chefmatch/levels.json) --- */
+const DATA_NIVEAUX = {
+  "version": 1,
+  "gridLegend": {
+    ".": "case jouable",
+    "#": "case vide"
+  },
+  "endBonus": "coups restants -> Couteau/Poêle aléatoires puis déclenchement",
+  "levels": [
+    {
+      "id": 1,
+      "moves": 20,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil"
+      ],
+      "goals": [
+        {
+          "type": "collect",
+          "piece": "tomato",
+          "count": 12
+        }
+      ],
+      "targetWinRate": 0.98,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "tutorial": "match3",
+      "designNote": "Tuto match de base, 4 couleurs = cascades gratuites"
+    },
+    {
+      "id": 2,
+      "moves": 20,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil"
+      ],
+      "goals": [
+        {
+          "type": "collect",
+          "piece": "croissant",
+          "count": 15
+        }
+      ],
+      "targetWinRate": 0.95,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "tutorial": "knife",
+      "designNote": "Couteau forcé au 1er coup"
+    },
+    {
+      "id": 3,
+      "moves": 20,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "goals": [
+        {
+          "type": "collect",
+          "piece": "tomato",
+          "count": 10
+        },
+        {
+          "type": "collect",
+          "piece": "basil",
+          "count": 10
+        }
+      ],
+      "targetWinRate": 0.92,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "designNote": "Double objectif"
+    },
+    {
+      "id": 4,
+      "moves": 18,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "goals": [
+        {
+          "type": "collect",
+          "piece": "macaron",
+          "count": 14
+        }
+      ],
+      "targetWinRate": 0.9,
+      "grid": [
+        "##....##",
+        "#......#",
+        "........",
+        "........",
+        "........",
+        "........",
+        "#......#",
+        "##....##"
+      ],
+      "tutorial": "pan",
+      "designNote": "Poêle forcée, plateau arrondi"
+    },
+    {
+      "id": 5,
+      "moves": 20,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "goals": [
+        {
+          "type": "collect",
+          "piece": "cheese",
+          "count": 12
+        },
+        {
+          "type": "collect",
+          "piece": "croissant",
+          "count": 12
+        }
+      ],
+      "targetWinRate": 0.9,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "tutorial": "cloche",
+      "designNote": "Cloche forcée, vole vers l'objectif"
+    },
+    {
+      "id": 6,
+      "moves": 20,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "goals": [
+        {
+          "type": "collect",
+          "piece": "basil",
+          "count": 20
+        }
+      ],
+      "targetWinRate": 0.88,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "tutorial": "star",
+      "designNote": "Étoile forcée : efface tous les basilics"
+    },
+    {
+      "id": 7,
+      "moves": 20,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "goals": [
+        {
+          "type": "collect",
+          "piece": "tomato",
+          "count": 12
+        },
+        {
+          "type": "collect",
+          "piece": "macaron",
+          "count": 12
+        },
+        {
+          "type": "collect",
+          "piece": "cheese",
+          "count": 8
+        }
+      ],
+      "targetWinRate": 0.85,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "...##...",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "designNote": "Triple objectif, petit trou central"
+    },
+    {
+      "id": 8,
+      "moves": 22,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "goals": [
+        {
+          "type": "collect",
+          "piece": "croissant",
+          "count": 25
+        }
+      ],
+      "targetWinRate": 0.85,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "tutorial": "combo_knife_knife",
+      "designNote": "Premier combo Couteau+Couteau forcé"
+    },
+    {
+      "id": 9,
+      "moves": 25,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil"
+      ],
+      "goals": [
+        {
+          "type": "collect",
+          "piece": "basil",
+          "count": 15
+        },
+        {
+          "type": "collect",
+          "piece": "tomato",
+          "count": 15
+        }
+      ],
+      "targetWinRate": 0.95,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "designNote": "Respiration : 4 couleurs, beaucoup de coups"
+    },
+    {
+      "id": 10,
+      "moves": 20,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese",
+        "blueberry"
+      ],
+      "goals": [
+        {
+          "type": "collect",
+          "piece": "macaron",
+          "count": 20
+        },
+        {
+          "type": "collect",
+          "piece": "blueberry",
+          "count": 20
+        }
+      ],
+      "targetWinRate": 0.55,
+      "grid": [
+        "#......#",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "#......#"
+      ],
+      "designNote": "Pic difficile (badge rouge), 6 couleurs"
+    }
+  ]
+};
+const NIVEAUX = DATA_NIVEAUX.levels;
+
+/* --- Textes FR embarqués (/workspace/chefmatch/texts_fr.json) --- */
+const TEXTES = {
+  "intro.1": "Port-Soleil... Le bistrot de Mamie Rose est en ruine, mais il est à moi maintenant.",
+  "intro.2": "Margot : Ma chérie, tu as les yeux de Rose ! Victor rôde déjà, il veut racheter le bistrot.",
+  "intro.3": "Emma : Hors de question. On rouvre La Petite Marée !",
+  "goal.collect": "Prépare la commande : collecte {count} {piece} !",
+  "goal.score": "Atteins {score} points pour régaler les clients !",
+  "goal.moves": "Coups restants : {moves}",
+  "win.title": "Service réussi !",
+  "win.text": "Les clients en redemandent, Chef !",
+  "win.button": "Continuer",
+  "lose.title": "Le plat a brûlé...",
+  "lose.text": "Pas de panique, même Mamie Rose ratait parfois ses soufflés !",
+  "lose.retry": "Réessayer",
+  "lose.extra_moves": "+5 coups",
+  "piece.tomato": "Tomate Rubis",
+  "piece.croissant": "Croissant Doré",
+  "piece.macaron": "Macaron Rose",
+  "piece.basil": "Basilic Frais",
+  "piece.cheese": "Fromage Soleil",
+  "piece.blueberry": "Myrtille Marine",
+  "powerup.knife": "Couteau du Chef",
+  "powerup.knife.desc": "Tranche toute une ligne ou une colonne.",
+  "powerup.cloche": "Cloche Surprise",
+  "powerup.cloche.desc": "S'envole et détruit une pièce ciblée.",
+  "powerup.pan": "Poêle Flambée",
+  "powerup.pan.desc": "Explose une zone 3x3.",
+  "powerup.star": "Étoile du Chef",
+  "powerup.star.desc": "Retire toutes les pièces d'une même couleur."
+};
+/** Texte par clé avec remplacement {param} ; repli sur la clé si absente. */
+function txt(cle, params = {}) {
+  return (TEXTES[cle] || cle).replace(/\{(\w+)\}/g, (_, k) => params[k] !== undefined ? params[k] : "{" + k + "}");
+}
+
+/* --- Correspondance clé de pièce -> emoji (UN SEUL endroit) --- */
+const PIECES = { tomato: "🍅", croissant: "🥐", macaron: "🧁", basil: "🌿", cheese: "🧀", blueberry: "🫐" };
+/* --- Specials internes -> power-ups du design (clés texts_fr.json) --- */
+const POWERUPS = {
+  ligneH:  { cle: "knife", emoji: "🔪" },   // Couteau du Chef : ligne
+  ligneV:  { cle: "knife", emoji: "🔪" },   //   ... ou colonne
+  bombe:   { cle: "pan",   emoji: "🍳" },   // Poêle Flambée : 3x3
+  couleur: { cle: "star",  emoji: "⭐" },   // Étoile du Chef : toute une couleur
+  cloche:  { cle: "cloche", emoji: "🔔" }   // Cloche Surprise : croix + envol vers une cible
+};
+/** Catégorie design d'un special interne */
+const categorie = sp => !sp ? null : sp.startsWith("ligne") ? "knife" : sp === "bombe" ? "pan" : sp === "cloche" ? "cloche" : "star";
+
+/* --- Bonus de fin (lu depuis endBonus du fichier si présent) --- */
+const BONUS_FIN = (() => {
+  const b = DATA_NIVEAUX.endBonus || "";
+  const types = [];
+  if (/couteau/i.test(b)) types.push("ligneH", "ligneV");
+  if (/po[êe]le/i.test(b)) types.push("bombe");
+  return { actif: true, types: types.length ? types : ["ligneH", "ligneV", "bombe"], source: b };
+})();
+
+/* --- Tutoriels scriptés : motif (cellules du type 0), coup à jouer, special attendu ---
+ *  Coordonnées relatives au centre ; le reste est rempli aléatoirement sans match. */
+const TUTOS = {
+  match3: { cellules: [[4,1],[4,2],[3,3]], coup: [[3,3],[4,3]], attendu: null },
+  knife:  { cellules: [[4,1],[4,2],[4,4],[3,3]], coup: [[3,3],[4,3]], attendu: "ligneH" },
+  pan:    { cellules: [[4,1],[4,2],[5,3],[6,3],[3,3]], coup: [[3,3],[4,3]], attendu: "bombe" },
+  star:   { cellules: [[4,1],[4,2],[4,4],[4,5],[3,3]], coup: [[3,3],[4,3]], attendu: "couleur" },
+  // Cloche : carré 2x2 complété en glissant la pièce (5,2) vers (4,2)
+  cloche: { cellules: [[3,1],[3,2],[4,1],[5,2]], coup: [[5,2],[4,2]], attendu: "cloche" },
+  combo_knife_knife: { specials: [[4,3,"ligneH"],[4,4,"ligneV"]], coup: [[4,3],[4,4]], attendu: "croix" }
+};
+
+/* =====================================================================
+ * 1b. STOCKAGE – localStorage protégé (file://, navigation privée...)
+ *     En cas d'échec : repli en mémoire (perdu au rechargement).
+ * ===================================================================== */
+const CLES = { logs: "chefmatch.logs", progres: "chefmatch.progres", intro: "chefmatch.introVue" };
+const Store = {
+  mem: {}, persistant: (() => { try { const k = "__cm_test"; localStorage.setItem(k, "1"); localStorage.removeItem(k); return true; } catch (e) { return false; } })(),
+  get(k, defaut) {
+    try { const v = localStorage.getItem(k); if (v !== null) return JSON.parse(v); } catch (e) {}
+    return k in this.mem ? JSON.parse(JSON.stringify(this.mem[k])) : defaut;
+  },
+  set(k, v) { this.mem[k] = v; try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  del(k) { delete this.mem[k]; try { localStorage.removeItem(k); } catch (e) {} }
+};
+
+/** Logs de playtest persistés : une entrée par session, 50 dernières conservées. */
+const Logs = {
+  MAX: 50,
+  tous() { const l = Store.get(CLES.logs, []); return Array.isArray(l) ? l : []; },
+  sauver(data) {
+    const l = this.tous(), i = l.findIndex(x => x.sid === data.sid);
+    if (i >= 0) l[i] = data; else l.push(data);
+    Store.set(CLES.logs, l.slice(-this.MAX));
+  },
+  effacer() { Store.set(CLES.logs, []); }
+};
+
+/** Progression : nombre de niveaux débloqués + meilleur résultat par niveau (id). */
+const Progres = {
+  lire() { const p = Store.get(CLES.progres, null); return p && p.debloques ? p : { debloques: 1, meilleurs: {} }; },
+  estDebloque(index) { return index < this.lire().debloques; },
+  enregistrer(index, id, victoire, coupsRestants) {
+    const p = this.lire(), m = p.meilleurs[id] || { essais: 0, victoires: 0, meilleursCoupsRestants: null };
+    m.essais++;
+    if (victoire) {
+      m.victoires++;
+      m.meilleursCoupsRestants = Math.max(m.meilleursCoupsRestants ?? -1, coupsRestants);
+      p.debloques = Math.min(NIVEAUX.length, Math.max(p.debloques, index + 2));
+    }
+    p.meilleurs[id] = m; Store.set(CLES.progres, p); return p;
+  },
+  toutDebloquer() { const p = this.lire(); p.debloques = NIVEAUX.length; Store.set(CLES.progres, p); },
+  reset() { Store.del(CLES.progres); Store.del(CLES.intro); }
+};
+
+/* =====================================================================
+ * 2. BOARD – logique pure de la grille (aucun DOM, testable sous Node)
+ *    Pièce = { id, type (0..5 ou -1 pour la bombe couleur), special }
+ *    special : null | "ligneH" | "ligneV" | "bombe" | "couleur"
+ * ===================================================================== */
+let prochainId = 1;
+function creerPiece(type, special = null) {
+  return { id: prochainId++, type, special };
+}
+
+class Board {
+  /** masque : tableau de chaînes ('.' jouable, '#' vide) ou null = tout jouable */
+  constructor(lignes, colonnes, nbTypes, rng = Math.random, masque = null) {
+    this.L = lignes; this.C = colonnes; this.nbTypes = nbTypes; this.rng = rng; this.masque = masque;
+    this.grille = [];
+    this.remplirSansMatch();
+  }
+  dansGrille(r, c) { return r >= 0 && r < this.L && c >= 0 && c < this.C; }
+  jouable(r, c) { return this.dansGrille(r, c) && (!this.masque || (this.masque[r] || "")[c] !== "#"); }
+  get(r, c) { return this.jouable(r, c) ? this.grille[r][c] : null; }
+  /** Liste des cases jouables */
+  cases() { const l = []; for (let r = 0; r < this.L; r++) for (let c = 0; c < this.C; c++) if (this.jouable(r, c)) l.push({ r, c }); return l; }
+  /** Grille pleine (toutes les cases jouables occupées) */
+  estPleine() { return this.cases().every(({ r, c }) => this.grille[r][c]); }
+  typeAleatoire() { return Math.floor(this.rng() * this.nbTypes); }
+
+  /** Remplit la grille sans aucun match initial et avec au moins un coup possible. */
+  remplirSansMatch(fixes = null) {
+    const t_ = (p, t) => p && p.type === t;
+    do {
+      this.grille = [];
+      for (let r = 0; r < this.L; r++) {
+        this.grille.push([]);
+        for (let c = 0; c < this.C; c++) {
+          if (!this.jouable(r, c)) { this.grille[r].push(null); continue; }
+          const fixe = fixes && fixes.get(r * this.C + c);
+          if (fixe) { this.grille[r].push(creerPiece(fixe.type, fixe.special || null)); continue; }
+          let t, essais = 0;
+          do { t = this.typeAleatoire(); essais++; } while (essais < 50 && (
+            (c >= 2 && t_(this.grille[r][c-1], t) && t_(this.grille[r][c-2], t)) ||
+            (r >= 2 && t_(this.grille[r-1][c], t) && t_(this.grille[r-2][c], t)) ||
+            (r >= 1 && c >= 1 && t_(this.grille[r-1][c], t) && t_(this.grille[r][c-1], t) && t_(this.grille[r-1][c-1], t))));
+          this.grille[r].push(creerPiece(t));
+        }
+      }
+    } while (fixes ? false : (this.trouverMatches().length > 0 || !this.aUnCoupPossible()));
+  }
+
+  /**
+   * Prépare une grille de tutoriel : motif imposé + coup évident.
+   * Réessaie jusqu'à ce qu'il n'y ait aucun match initial et que le coup
+   * produise bien le special attendu. Renvoie le coup {a,b} ou null.
+   */
+  preparerTuto(tuto) {
+    const fixes = new Map(), k = (r, c) => r * this.C + c;
+    (tuto.cellules || []).forEach(([r, c]) => fixes.set(k(r, c), { type: 0 }));
+    (tuto.specials || []).forEach(([r, c, sp], i) => fixes.set(k(r, c), { type: i + 1, special: sp }));
+    const a = { r: tuto.coup[0][0], c: tuto.coup[0][1] }, b = { r: tuto.coup[1][0], c: tuto.coup[1][1] };
+    for (let essai = 0; essai < 300; essai++) {
+      this.remplirSansMatch(fixes);
+      if (this.trouverMatches().length) continue;
+      if (tuto.specials) return { a, b };
+      if (this.get(b.r, b.c) && this.get(b.r, b.c).type === 0) continue;
+      this.echanger(a, b);
+      const g = this.trouverMatches();
+      this.echanger(a, b);
+      if (g.length === 1 && this.specialPourGroupe(g[0]) === tuto.attendu) return { a, b };
+    }
+    this.remplirSansMatch(); return null;
+  }
+
+  echanger(a, b) {
+    const t = this.grille[a.r][a.c];
+    this.grille[a.r][a.c] = this.grille[b.r][b.c];
+    this.grille[b.r][b.c] = t;
+  }
+
+  /** Deux pièces de même type « matchable » ? (la bombe couleur ne matche pas) */
+  memeType(p, q) { return p && q && p.type >= 0 && p.type === q.type; }
+
+  /**
+   * Détection des motifs selon les règles MatchDesign, par priorité :
+   *   1. 5 en ligne         -> Étoile (couleur)
+   *   2. L / T (3H x 3V)    -> Poêle (bombe 3x3)
+   *   3. 4 en ligne         -> Couteau (ligneH / ligneV selon le sens)
+   *   4. carré 2x2          -> Cloche
+   *   5. 3 en ligne         -> simple
+   * Chaque pièce n'appartient qu'à UN motif (les cases déjà prises sont exclues).
+   * Retour : [{ cases:[{r,c}], special, centre? }]
+   */
+  trouverMatches() {
+    const segs = [];
+    for (let r = 0; r < this.L; r++) {             // segments horizontaux >= 3
+      let c = 0;
+      while (c < this.C) {
+        let f = c + 1;
+        while (f < this.C && this.memeType(this.grille[r][c], this.grille[r][f])) f++;
+        if (f - c >= 3) segs.push({ dir: "H", cases: Array.from({length:f-c}, (_, i) => ({ r, c: c+i })) });
+        c = f;
+      }
+    }
+    for (let c = 0; c < this.C; c++) {             // segments verticaux >= 3
+      let r = 0;
+      while (r < this.L) {
+        let f = r + 1;
+        while (f < this.L && this.memeType(this.grille[r][c], this.grille[f][c])) f++;
+        if (f - r >= 3) segs.push({ dir: "V", cases: Array.from({length:f-r}, (_, i) => ({ r: r+i, c })) });
+        r = f;
+      }
+    }
+    const carres = [];                              // carrés 2x2
+    for (let r = 0; r < this.L - 1; r++) for (let c = 0; c < this.C - 1; c++) {
+      const p = this.grille[r][c];
+      if (this.memeType(p, this.grille[r][c+1]) && this.memeType(p, this.grille[r+1][c]) && this.memeType(p, this.grille[r+1][c+1]))
+        carres.push([{ r, c }, { r, c: c+1 }, { r: r+1, c }, { r: r+1, c: c+1 }]);
+    }
+    const K = x => x.r * this.C + x.c, pris = new Set(), motifs = [];
+    const libre = cs => cs.every(x => !pris.has(K(x)));
+    const prendre = (cases, special, extra = {}) => { cases.forEach(x => pris.add(K(x))); motifs.push({ cases, special, ...extra }); };
+    // 1. Étoile
+    segs.filter(s => s.cases.length >= 5).forEach(s => { if (libre(s.cases)) prendre(s.cases, "couleur", { dir: s.dir }); });
+    // 2. Poêle (L/T) : un segment H et un segment V qui se croisent
+    const H = segs.filter(s => s.dir === "H"), V = segs.filter(s => s.dir === "V");
+    H.forEach(h => V.forEach(v => {
+      const inter = h.cases.find(a => v.cases.some(b => a.r === b.r && a.c === b.c));
+      if (inter && libre(h.cases) && libre(v.cases))
+        prendre([...h.cases, ...v.cases.filter(b => !(b.r === inter.r && b.c === inter.c))], "bombe", { centre: inter });
+    }));
+    // 3. Couteau
+    segs.filter(s => s.cases.length === 4).forEach(s => { if (libre(s.cases)) prendre(s.cases, s.dir === "H" ? "ligneH" : "ligneV", { dir: s.dir }); });
+    // 4. Cloche
+    carres.forEach(q => { if (libre(q)) prendre(q, "cloche"); });
+    // 5. 3 en ligne (et restes de segments partiellement utilisés)
+    segs.forEach(s => { const reste = s.cases.filter(x => !pris.has(K(x))); if (reste.length) prendre(reste, null); });
+    return motifs;
+  }
+
+  /** Power-up produit par un motif (null = match simple) */
+  specialPourGroupe(g) { return g.special; }
+
+  /** Cases affectées par le déclenchement d'un special situé en (r,c). */
+  zoneSpecial(piece, r, c, typeCible = null) {
+    const z = [];
+    if (piece.special === "ligneH") for (let x = 0; x < this.C; x++) z.push({ r, c: x });
+    else if (piece.special === "ligneV") for (let y = 0; y < this.L; y++) z.push({ r: y, c });
+    else if (piece.special === "bombe") {
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++)
+        if (this.dansGrille(r+dr, c+dc)) z.push({ r: r+dr, c: c+dc });
+    } else if (piece.special === "cloche") {
+      // Cloche : sa case + 4 voisins orthogonaux (le vol vers une cible est géré à part)
+      [[0,0],[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr, dc]) => { if (this.jouable(r+dr, c+dc)) z.push({ r: r+dr, c: c+dc }); });
+    } else if (piece.special === "couleur") {
+      // Sans cible explicite (réaction en chaîne) : le type le plus présent
+      if (typeCible === null || typeCible < 0) typeCible = this.typeMajoritaire();
+      z.push({ r, c });
+      for (let y = 0; y < this.L; y++) for (let x = 0; x < this.C; x++)
+        if (this.grille[y][x] && this.grille[y][x].type === typeCible) z.push({ r: y, c: x });
+    }
+    return z;
+  }
+
+  /**
+   * Cible d'une cloche : au hasard parmi les pièces les plus proches dont le
+   * type est un objectif incomplet ; sinon une case quelconque au hasard.
+   */
+  choisirCible(origine, typesObjectifs = [], exclus = new Set()) {
+    const toutes = this.cases().filter(x => this.grille[x.r][x.c] && !exclus.has(x.r * this.C + x.c));
+    if (!toutes.length) return null;
+    const obj = toutes.filter(x => typesObjectifs.includes(this.grille[x.r][x.c].type));
+    if (obj.length) {
+      const d = x => Math.abs(x.r - origine.r) + Math.abs(x.c - origine.c);
+      const dmin = Math.min(...obj.map(d)), proches = obj.filter(x => d(x) === dmin);
+      return proches[Math.floor(this.rng() * proches.length)];
+    }
+    return toutes[Math.floor(this.rng() * toutes.length)];
+  }
+
+  typeMajoritaire() {
+    const n = new Array(this.nbTypes).fill(0);
+    this.grille.flat().forEach(p => { if (p && p.type >= 0) n[p.type]++; });
+    return n.indexOf(Math.max(...n));
+  }
+
+  /**
+   * Calcule un « coup de résolution » complet :
+   *  - cases initiales à effacer (matches et/ou zone d'activation)
+   *  - propagation en chaîne des specials touchés
+   *  - création des nouveaux specials (non effacés)
+   * Modifie la grille (cases effacées = null) et renvoie
+   * { effacees:[{r,c,piece}], crees:[{r,c,piece}] }.
+   * @param initiales  cases à effacer
+   * @param creations  [{r,c,special,type}] power-ups à poser
+   * @param ciblesCouleur Map clé->type pour les bombes couleur échangées
+   */
+  effacer(initiales, creations = [], ciblesCouleur = new Map()) {
+    const aEffacer = new Map();          // clé -> {r,c}
+    const pile = [...initiales];
+    const protegees = new Set(creations.map(k => k.r * this.C + k.c));
+    const vols = [];                     // envols de cloches à animer ensuite
+    const chaine = [];                   // ordre de déclenchement (debug/tests)
+    while (pile.length) {
+      const { r, c } = pile.pop();
+      const k = r * this.C + c;
+      if (aEffacer.has(k) || !this.grille[r][c]) continue;
+      const p = this.grille[r][c];
+      aEffacer.set(k, { r, c, piece: p });
+      if (p.special === "cloche")
+        for (let n = 0; n < (p.nbVols || 1); n++) vols.push({ r, c, porte: p.porte || null });
+      if (p.special) {                    // réaction en chaîne
+        chaine.push(p.special);
+        this.zoneSpecial(p, r, c, ciblesCouleur.has(k) ? ciblesCouleur.get(k) : null)
+          .forEach(z => pile.push(z));
+      }
+    }
+    const effacees = [...aEffacer.values()];
+    effacees.forEach(({ r, c }) => { this.grille[r][c] = null; });
+    const crees = [];
+    creations.forEach(cr => {
+      // La pièce normale remplacée par le power-up compte aussi comme effacée (objectifs)
+      const ancienne = this.grille[cr.r][cr.c];
+      if (ancienne) effacees.push({ r: cr.r, c: cr.c, piece: ancienne, remplacee: true });
+      const piece = creerPiece(cr.special === "couleur" ? -1 : cr.type, cr.special);
+      this.grille[cr.r][cr.c] = piece;
+      crees.push({ r: cr.r, c: cr.c, piece });
+    });
+    return { effacees, crees, protegees, vols, chaine };
+  }
+
+  /** Transforme les groupes de matches en cases + créations de power-ups. */
+  analyserMatches(groupes, casesEchangees = []) {
+    const cases = [], creations = [];
+    groupes.forEach(g => {
+      g.cases.forEach(cs => cases.push(cs));
+      const sp = this.specialPourGroupe(g);
+      if (!sp) return;
+      // Position : la case échangée si elle fait partie du groupe, sinon croisement / milieu
+      let pos = casesEchangees.find(e => g.cases.some(cs => cs.r === e.r && cs.c === e.c));
+      if (!pos && sp === "bombe") pos = g.centre;
+      if (!pos) pos = g.cases[Math.floor(g.cases.length / 2)];
+      const type = this.grille[pos.r][pos.c].type;
+      creations.push({ r: pos.r, c: pos.c, special: sp, type });
+    });
+    // La case du power-up n'est pas effacée... sauf si elle contenait déjà un special (il se déclenche)
+    const cleCrea = new Set(creations.map(k => k.r * this.C + k.c));
+    const filtrees = cases.filter(cs => !cleCrea.has(cs.r * this.C + cs.c) || this.grille[cs.r][cs.c].special);
+    // Si un special occupe la case de création, il se déclenche d'abord puis le nouveau est posé
+    return { cases: filtrees, creations };
+  }
+
+  /** Gravité : fait tomber les pièces. Renvoie [{piece, deR, versR, c}] */
+  appliquerGravite() {
+    const mouvements = [];
+    for (let c = 0; c < this.C; c++) {
+      // Les pièces tombent à travers les cases vides '#' jusqu'à la case jouable libre la plus basse
+      const rangs = []; for (let r = this.L - 1; r >= 0; r--) if (this.jouable(r, c)) rangs.push(r);
+      let i = 0;
+      for (const r of rangs) {
+        const p = this.grille[r][c];
+        if (p) {
+          const dest = rangs[i++];
+          if (dest !== r) {
+            this.grille[dest][c] = p; this.grille[r][c] = null;
+            mouvements.push({ piece: p, deR: r, versR: dest, c });
+          }
+        }
+      }
+    }
+    return mouvements;
+  }
+
+  /** Remplit les cases vides par le haut. Renvoie [{piece, deR (négatif), versR, c}] */
+  remplir() {
+    const nouvelles = [];
+    for (let c = 0; c < this.C; c++) {
+      let vides = 0;
+      for (let r = 0; r < this.L; r++) if (this.jouable(r, c) && !this.grille[r][c]) vides++;
+      let n = 0;
+      for (let r = 0; r < this.L; r++) {
+        if (this.jouable(r, c) && !this.grille[r][c]) {
+          const p = creerPiece(this.typeAleatoire());
+          this.grille[r][c] = p;
+          nouvelles.push({ piece: p, deR: (n++) - vides, versR: r, c });
+        }
+      }
+    }
+    return nouvelles;
+  }
+
+  /** Un échange (a,b) est-il valide ? (match créé ou special impliqué) */
+  echangeValide(a, b) {
+    const pa = this.get(a.r, a.c), pb = this.get(b.r, b.c);
+    if (!pa || !pb) return false;
+    if (pa.special || pb.special) return true;
+    this.echanger(a, b);
+    const ok = this.trouverMatches().length > 0;
+    this.echanger(a, b);
+    return ok;
+  }
+
+  /** Renvoie un coup possible {a,b} ou null. */
+  trouverCoupPossible() {
+    for (let r = 0; r < this.L; r++) for (let c = 0; c < this.C; c++) {
+      if (c + 1 < this.C && this.echangeValide({r, c}, {r, c: c+1})) return { a: {r, c}, b: {r, c: c+1} };
+      if (r + 1 < this.L && this.echangeValide({r, c}, {r: r+1, c})) return { a: {r, c}, b: {r: r+1, c} };
+    }
+    return null;
+  }
+  aUnCoupPossible() { return this.trouverCoupPossible() !== null; }
+
+  /** Mélange en conservant les pièces (specials compris), sans match et avec un coup possible. */
+  melanger() {
+    const cases = this.cases(), pieces = cases.map(({ r, c }) => this.grille[r][c]);
+    for (let essai = 0; essai < 200; essai++) {
+      for (let i = pieces.length - 1; i > 0; i--) {
+        const j = Math.floor(this.rng() * (i + 1)); [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
+      }
+      cases.forEach(({ r, c }, i) => { this.grille[r][c] = pieces[i]; });
+      if (this.trouverMatches().length === 0 && this.aUnCoupPossible()) return true;
+    }
+    this.remplirSansMatch();   // repli : nouvelle grille
+    return false;
+  }
+}
+
+/* =====================================================================
+ * 3. ANIMATOR – tweens avec easing, renvoie des Promises
+ * ===================================================================== */
+const Easing = {
+  lineaire: t => t,
+  sortieQuad: t => 1 - (1 - t) * (1 - t),
+  entreeQuad: t => t * t,
+  sortieRebond: t => { // petit rebond à l'atterrissage
+    const n = 7.5625, d = 2.75;
+    if (t < 1/d) return n*t*t; if (t < 2/d) return n*(t-=1.5/d)*t+.75;
+    if (t < 2.5/d) return n*(t-=2.25/d)*t+.9375; return n*(t-=2.625/d)*t+.984375;
+  },
+  sortieBack: t => { const s = 1.70158; return 1 + (s+1)*Math.pow(t-1,3) + s*Math.pow(t-1,2); }
+};
+
+class Animator {
+  constructor() { this.tweens = []; }
+  /** Anime les propriétés numériques de obj vers cibles. */
+  tween(obj, cibles, duree, easing = Easing.sortieQuad, delai = 0) {
+    return new Promise(resolve => {
+      const depart = {};
+      for (const k in cibles) depart[k] = obj[k];
+      this.tweens.push({ obj, depart, cibles, duree: Math.max(1, duree), t: -delai, easing, resolve });
+    });
+  }
+  get actif() { return this.tweens.length > 0; }
+  update(dt) {
+    this.tweens = this.tweens.filter(tw => {
+      tw.t += dt;
+      if (tw.t < 0) return true;
+      const p = Math.min(1, tw.t / tw.duree), e = tw.easing(p);
+      for (const k in tw.cibles) tw.obj[k] = tw.depart[k] + (tw.cibles[k] - tw.depart[k]) * e;
+      if (p >= 1) { tw.resolve(); return false; }
+      return true;
+    });
+  }
+}
+const attendre = ms => new Promise(r => setTimeout(r, ms));
+
+/* =====================================================================
+ * 4. RENDERER – dessin Canvas (DPR, responsive portrait)
+ *    Chaque pièce a un état visuel : vue = {x, y (en cases), echelle, alpha}
+ * ===================================================================== */
+class Renderer {
+  constructor(canvas, jeu) {
+    this.canvas = canvas; this.ctx = canvas.getContext("2d"); this.jeu = jeu;
+    this.redimensionner();
+    window.addEventListener("resize", () => this.redimensionner());
+  }
+  redimensionner() {
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.min(window.innerWidth, window.innerHeight * 0.62, 520), h = window.innerHeight;
+    this.w = w; this.h = h;
+    this.canvas.style.width = w + "px"; this.canvas.style.height = h + "px";
+    this.canvas.width = Math.round(w * dpr); this.canvas.height = Math.round(h * dpr);
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const { L, C } = this.jeu.board;
+    this.taille = Math.floor(Math.min((w - 20) / C, (h - 190) / L));   // taille d'une case
+    this.ox = (w - this.taille * C) / 2;
+    this.oy = 146; // plateau aligné en haut, juste sous le HUD
+  }
+  /** Coordonnées écran -> case */
+  caseDepuisPoint(px, py) {
+    const c = Math.floor((px - this.ox) / this.taille), r = Math.floor((py - this.oy) / this.taille);
+    return this.jeu.board.jouable(r, c) ? { r, c } : null;
+  }
+  rectArrondi(x, y, w, h, rad) {
+    const g = this.ctx; g.beginPath(); g.moveTo(x+rad, y);
+    g.arcTo(x+w, y, x+w, y+h, rad); g.arcTo(x+w, y+h, x, y+h, rad);
+    g.arcTo(x, y+h, x, y, rad); g.arcTo(x, y, x+w, y, rad); g.closePath();
+  }
+  dessiner(temps) {
+    const g = this.ctx, K = CONFIG.couleurs, j = this.jeu, b = j.board, T = this.taille;
+    g.fillStyle = K.fond; g.fillRect(0, 0, this.w, this.h);
+    this.dessinerHUD();
+    // Plateau (damier crème)
+    g.fillStyle = "#8a5a3b"; this.rectArrondi(this.ox-8, this.oy-8, T*b.C+16, T*b.L+16, 18); g.fill();
+    for (let r = 0; r < b.L; r++) for (let c = 0; c < b.C; c++) {
+      g.fillStyle = !b.jouable(r, c) ? "#8a5a3b" : (r + c) % 2 ? K.case2 : K.case1;
+      g.fillRect(this.ox + c*T, this.oy + r*T, T, T);
+    }
+    // Sélection
+    if (j.selection) {
+      g.strokeStyle = K.selection; g.lineWidth = 4;
+      this.rectArrondi(this.ox + j.selection.c*T + 3, this.oy + j.selection.r*T + 3, T-6, T-6, 10); g.stroke();
+    }
+    // Indice (debug) : surbrillance d'un coup possible
+    if (j.indice) {
+      g.strokeStyle = "#3fb8ff"; g.lineWidth = 4 + 2 * Math.sin(temps / 120);
+      [j.indice.a, j.indice.b].forEach(k => { this.rectArrondi(this.ox + k.c*T + 3, this.oy + k.r*T + 3, T-6, T-6, 10); g.stroke(); });
+    }
+    // Pièces (clip au plateau pour masquer les pièces qui arrivent par le haut)
+    g.save(); g.beginPath(); g.rect(this.ox, this.oy, T*b.C, T*b.L); g.clip();
+    const dessinerPiece = (p) => {
+      const v = j.vue(p); if (v.alpha <= 0) return;
+      this.dessinerPiece(p, this.ox + (v.x + .5)*T, this.oy + (v.y + .5)*T, v.echelle, v.alpha, temps);
+    };
+    for (let r = 0; r < b.L; r++) for (let c = 0; c < b.C; c++) if (b.grille[r][c]) dessinerPiece(b.grille[r][c]);
+    j.fantomes.forEach(dessinerPiece);  // pièces en train de disparaître
+    g.restore();
+    // Cloches en vol
+    j.cloches.forEach(v => {
+      g.save(); g.translate(this.ox + (v.x + .5)*T, this.oy + (v.y + .5)*T); g.scale(v.echelle, v.echelle); g.rotate(Math.sin(v.x * 3) * .3);
+      g.font = `${Math.floor(T*.7)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+      g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(v.porte ? "🔔" + POWERUPS[v.porte].emoji : "🔔", 0, 0); g.restore();
+    });
+    // Particules
+    j.particules.forEach(pa => { g.globalAlpha = Math.max(0, pa.vie); g.fillStyle = pa.couleur;
+      g.beginPath(); g.arc(pa.x, pa.y, pa.taille, 0, Math.PI*2); g.fill(); });
+    g.globalAlpha = 1;
+    if (j.message) { // bandeau : objectif, « Mélange ! », nom de power-up, Sweet Rush...
+      g.font = "bold 17px Trebuchet MS";
+      const lignes = j.message.split("\n"), lw = Math.min(this.w - 20, Math.max(...lignes.map(l => g.measureText(l).width)) + 30);
+      const hh = 24 * lignes.length + 18, y0 = this.oy + T*b.L/2 - hh/2;
+      g.fillStyle = "rgba(90,50,32,.9)"; this.rectArrondi(this.w/2 - lw/2, y0, lw, hh, 16); g.fill();
+      g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle";
+      lignes.forEach((l, i) => g.fillText(l, this.w/2, y0 + 21 + i * 24));
+    }
+  }
+  dessinerPiece(p, cx, cy, echelle, alpha, temps) {
+    const g = this.ctx, T = this.taille * echelle;
+    g.save(); g.globalAlpha = alpha; g.translate(cx, cy);
+    if (p.special) {
+      // Halo pulsé : les specials sont visuellement distincts
+      const puls = 1 + 0.06 * Math.sin(temps / 180);
+      g.scale(puls, puls);
+      const coul = { ligneH: "#ff8c42", ligneV: "#ff8c42", bombe: "#e2483d", couleur: "#9b5de5", cloche: "#3aa89e" }[p.special];
+      g.fillStyle = coul; g.globalAlpha = alpha * 0.85;
+      this.rectArrondi(-T*.44, -T*.44, T*.88, T*.88, T*.22); g.fill();
+      g.globalAlpha = alpha;
+      g.strokeStyle = "#fff"; g.lineWidth = 2; g.stroke();
+      if (p.special === "ligneH" || p.special === "ligneV") { // flèches
+        g.fillStyle = "#fff";
+        g.save(); if (p.special === "ligneV") g.rotate(Math.PI/2);
+        for (const s of [-1, 1]) { g.beginPath(); g.moveTo(s*T*.42, 0); g.lineTo(s*T*.30, -T*.09); g.lineTo(s*T*.30, T*.09); g.fill(); }
+        g.restore();
+      }
+    }
+    g.font = `${Math.floor(T * (p.special ? .55 : .7))}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+    g.textAlign = "center"; g.textBaseline = "middle";
+    const emoji = p.special === "couleur" ? POWERUPS.couleur.emoji : CONFIG.types[p.type];
+    g.fillText(emoji, 0, T * .04);
+    if (p.special && p.special !== "couleur") { // icône du power-up (🔪 / 🍳) en coin
+      g.font = `${Math.floor(T*.32)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+      g.fillText(POWERUPS[p.special].emoji, T*.24, -T*.24);
+    }
+    g.restore();
+  }
+  dessinerHUD() {
+    const g = this.ctx, K = CONFIG.couleurs, j = this.jeu;
+    g.fillStyle = K.hud; this.rectArrondi(10, 12, this.w - 20, 116, 20); g.fill();
+    g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = K.texte;
+    g.font = "bold 18px Trebuchet MS"; g.fillText("👨‍🍳 Chef Match – Niveau " + j.niveau.id, this.w/2, 32);
+    // Coups restants
+    g.fillStyle = K.accent; this.rectArrondi(22, 50, 84, 66, 14); g.fill();
+    g.fillStyle = "#fff"; g.font = "12px Trebuchet MS"; g.fillText("COUPS", 64, 64);
+    g.font = "bold 30px Trebuchet MS"; g.fillText(j.coups, 64, 94);
+    // Objectifs
+    const n = j.objectifs.length, zoneX = 116, zoneW = this.w - 22 - zoneX;
+    j.objectifs.forEach((o, i) => {
+      const cx = zoneX + zoneW * (i + .5) / n;
+      g.font = '32px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+      g.fillText(CONFIG.types[o.type], cx, 76);
+      g.fillStyle = o.restant === 0 ? "#4e9a3a" : K.texte; g.font = "bold 18px Trebuchet MS";
+      g.fillText(o.restant === 0 ? "✔" : o.restant, cx, 108); g.fillStyle = K.texte;
+    });
+  }
+}
+
+/* =====================================================================
+ * 5. INPUT – Pointer Events (souris + tactile) : swipe et tap-tap
+ * ===================================================================== */
+class Input {
+  constructor(canvas, jeu) {
+    this.jeu = jeu; this.depart = null;
+    const pos = e => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+    canvas.addEventListener("pointerdown", e => {
+      if (jeu.rush) { jeu.rush.passer = true; return; } // tap = passer le Sweet Rush
+      if (!jeu.peutJouer()) return;
+      canvas.setPointerCapture(e.pointerId);
+      const p = pos(e), cs = jeu.renderer.caseDepuisPoint(p.x, p.y);
+      this.depart = cs ? { ...p, cs, swipe: false } : null;
+    });
+    canvas.addEventListener("pointermove", e => {
+      if (!this.depart || this.depart.swipe || !jeu.peutJouer()) return;
+      const p = pos(e), dx = p.x - this.depart.x, dy = p.y - this.depart.y;
+      const seuil = jeu.renderer.taille * CONFIG.seuilSwipe;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < seuil) return;
+      this.depart.swipe = true;
+      const a = this.depart.cs;
+      const b = Math.abs(dx) > Math.abs(dy) ? { r: a.r, c: a.c + Math.sign(dx) } : { r: a.r + Math.sign(dy), c: a.c };
+      jeu.selection = null;
+      if (jeu.board.jouable(b.r, b.c)) jeu.jouerEchange(a, b);
+    });
+    canvas.addEventListener("pointerup", () => {
+      if (this.depart && !this.depart.swipe && jeu.peutJouer()) this.tap(this.depart.cs);
+      this.depart = null;
+    });
+    canvas.addEventListener("pointercancel", () => { this.depart = null; });
+  }
+  tap(cs) {
+    const j = this.jeu, s = j.selection;
+    if (j.debug.placer) { j.debugPoserSpecial(cs, j.debug.placer); return; }
+    if (!s) { j.selection = cs; return; }
+    if (s.r === cs.r && s.c === cs.c) { j.selection = null; return; }
+    if (Math.abs(s.r - cs.r) + Math.abs(s.c - cs.c) === 1) { j.selection = null; j.jouerEchange(s, cs); }
+    else j.selection = cs;
+  }
+}
+
+/* =====================================================================
+ * 6. GAME – machine à états + orchestration logique / animations
+ * ===================================================================== */
+const ETAT = { IDLE: "IDLE", SWAPPING: "SWAPPING", RESOLVING: "RESOLVING", FALLING: "FALLING", END: "END" };
+
+class Game {
+  constructor(canvas, indexNiveau = 0) {
+    this.indexNiveau = indexNiveau; this.animator = new Animator();
+    this.vues = new WeakMap(); this.fantomes = []; this.particules = []; this.cloches = [];
+    this.debug = { vitesse: 1, placer: null }; this.fps = 60; this.sessions = [];
+    this.demarrer();
+    this.renderer = new Renderer(canvas, this);
+    this.input = new Input(canvas, this);
+    let dernier = performance.now();
+    const boucle = (t) => {               // boucle requestAnimationFrame avec delta-time
+      const dt = Math.min(50, t - dernier); dernier = t;
+      this.animator.update(dt * this.debug.vitesse * (this.rush && this.rush.passer ? 8 : 1)); this.majParticules(dt);
+      this.fps = this.fps * 0.9 + (1000 / Math.max(1, dt)) * 0.1;
+      this.renderer.dessiner(t);
+      requestAnimationFrame(boucle);
+    };
+    requestAnimationFrame(boucle);
+  }
+  /** Lance le niveau NIVEAUX[index] (format MatchDesign). */
+  demarrer(index = this.indexNiveau) {
+    this.indexNiveau = Math.max(0, Math.min(NIVEAUX.length - 1, index));
+    const N = this.niveau = NIVEAUX[this.indexNiveau];
+    CONFIG.types = N.colors.map(k => PIECES[k] || "❓");     // type i = N.colors[i]
+    const grid = N.grid || null;
+    this.board = new Board(grid ? grid.length : 8, grid ? grid[0].length : 8, N.colors.length, Math.random, grid);
+    this.coups = N.moves;
+    this.objectifs = N.goals.filter(g => g.type === "collect")
+      .map(g => ({ type: N.colors.indexOf(g.piece), cle: g.piece, restant: g.count }))
+      .filter(o => o.type >= 0);
+    this.etat = ETAT.IDLE; this.selection = null; this.message = null; this.fantomes = [];
+    this.vues = new WeakMap(); this.indice = null; this.tutoCoup = null; this.rush = null; this.puVus = new Set();
+    // Tutoriel scripté : grille préparée + coup imposé surligné
+    const tuto = N.tutorial && TUTOS[N.tutorial];
+    if (tuto) { const coup = this.board.preparerTuto(tuto); if (coup) { this.indice = coup; this.tutoCoup = coup; } }
+    this.afficherMessage(this.objectifs.map(o => txt("goal.collect", { count: o.restant, piece: txt("piece." + o.cle) })).join("\n"), 2200);
+    this.log = new PlaytestLog(this); this.sessions.push(this.log.data);
+    this.board.grille.forEach((ligne, r) => ligne.forEach((p, c) => { if (!p) return; const v = this.vue(p); v.x = c; v.y = r; }));
+    if (this.renderer) this.renderer.redimensionner();
+  }
+  /** État visuel d'une pièce (créé à la volée). */
+  vue(p) {
+    if (!this.vues.has(p)) this.vues.set(p, { x: 0, y: 0, echelle: 1, alpha: 1 });
+    return this.vues.get(p);
+  }
+  /** Bandeau temporaire au centre du plateau. */
+  afficherMessage(m, ms = 1400) {
+    this.message = m; clearTimeout(this._tMsg);
+    if (ms) this._tMsg = setTimeout(() => { if (this.message === m) this.message = null; }, ms);
+  }
+  peutJouer() { return this.etat === ETAT.IDLE; }
+  changerEtat(e) { this.etat = e; }
+
+  /** Point d'entrée d'un coup joueur. */
+  async jouerEchange(a, b) {
+    if (!this.peutJouer()) return;
+    const B = this.board, D = CONFIG.durees;
+    const pa = B.get(a.r, a.c), pb = B.get(b.r, b.c);
+    if (!pa || !pb) return;
+    // Tutoriel : seul le coup surligné est accepté au premier coup
+    const T = this.tutoCoup, estTuto = T && ((T.a.r===a.r&&T.a.c===a.c&&T.b.r===b.r&&T.b.c===b.c) || (T.a.r===b.r&&T.a.c===b.c&&T.b.r===a.r&&T.b.c===a.c));
+    this.changerEtat(ETAT.SWAPPING);
+    if (!T) this.indice = null;
+    const va = this.vue(pa), vb = this.vue(pb);
+    // Animation d'échange
+    await Promise.all([this.animator.tween(va, { x: b.c, y: b.r }, D.swap), this.animator.tween(vb, { x: a.c, y: a.r }, D.swap)]);
+    if (!B.echangeValide(a, b) || (T && !estTuto)) {
+      // Échange invalide : retour avec rebond
+      await Promise.all([this.animator.tween(va, { x: a.c, y: a.r }, D.rebond * 1.5, Easing.sortieBack),
+                         this.animator.tween(vb, { x: b.c, y: b.r }, D.rebond * 1.5, Easing.sortieBack)]);
+      this.log.invalide(a, b);
+      this.changerEtat(ETAT.IDLE); return;
+    }
+    this.log.coup(a, b, pa, pb);
+    if (T) { this.tutoCoup = null; this.indice = null; }
+    B.echanger(a, b);
+    this.coups--;
+    this.changerEtat(ETAT.RESOLVING);
+    // Après l'échange : pa est en b, pb est en a
+    await this.resoudreEchange(b, pa, a, pb);
+    await this.boucleCascades([a, b]);
+    this.finDeCoup();
+  }
+
+  /** Gère l'activation des specials par échange (avant les matches classiques). */
+  async resoudreEchange(posA, pa, posB, pb) {
+    const B = this.board, ca = categorie(pa.special), cb = categorie(pb.special);
+    if (!ca && !cb) return;
+    const cles = new Map(), initiales = [], k = p => p.r * B.C + p.c;
+    const ajouterZone = (r0, r1, c0, c1) => { for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) if (B.jouable(r, c)) initiales.push({ r, c }); };
+    const P = posA;   // centre des combos = case où arrive la pièce déplacée
+    let combo = null;
+    if (ca === "star" && cb === "star") {
+      // Étoile + Étoile : tout le plateau
+      combo = "star_star"; pa.special = null; pb.special = null; ajouterZone(0, B.L - 1, 0, B.C - 1);
+    } else if (ca === "star" || cb === "star") {
+      const [posS, st, posO, autre] = ca === "star" ? [posA, pa, posB, pb] : [posB, pb, posA, pa];
+      if (!autre.special) { cles.set(k(posS), autre.type); initiales.push(posS); }   // Étoile + pièce : sa couleur
+      else {
+        // Étoile + power-up : la couleur la plus fréquente devient ce power-up, puis tout se déclenche
+        combo = "star_" + categorie(autre.special); st.special = null;
+        const t = B.typeMajoritaire();
+        B.cases().forEach(({ r, c }) => { const p = B.grille[r][c];
+          if (p && p.type === t && !p.special) {
+            p.special = categorie(autre.special) === "knife" ? (B.rng() < .5 ? "ligneH" : "ligneV") : autre.special;
+            initiales.push({ r, c }); } });
+        initiales.push(posS, posO);
+      }
+    } else if (ca && cb) {
+      combo = [ca, cb].sort().join("_");
+      if (combo === "knife_knife") { pa.special = pb.special = null; ajouterZone(P.r, P.r, 0, B.C - 1); ajouterZone(0, B.L - 1, P.c, P.c); }
+      else if (combo === "knife_pan") { pa.special = pb.special = null; ajouterZone(P.r - 1, P.r + 1, 0, B.C - 1); ajouterZone(0, B.L - 1, P.c - 1, P.c + 1); }
+      else if (combo === "pan_pan") { pa.special = pb.special = null; ajouterZone(P.r - 2, P.r + 2, P.c - 2, P.c + 2); }
+      else if (combo === "cloche_cloche") { pa.nbVols = 3; pb.special = null; }       // 3 cloches vers 3 cibles
+      else { // cloche + couteau/poêle : la cloche emporte l'autre power-up jusqu'à sa cible
+        const [cl, autre] = ca === "cloche" ? [pa, pb] : [pb, pa];
+        cl.porte = autre.special; autre.special = null;
+      }
+      initiales.push(posA, posB);
+    } else {
+      // Un seul power-up échangé avec une pièce normale : il se déclenche
+      if (pa.special) initiales.push(posA);
+      if (pb.special) initiales.push(posB);
+    }
+    if (combo) {
+      this.log.powerUp("actives", "combo_" + combo);
+      const noms = { knife_knife: "Croix", knife_pan: "Super croix", pan_pan: "Méga explosion", cloche_knife: "Cloche + Couteau",
+        cloche_pan: "Cloche + Poêle", cloche_cloche: "Triple cloche", star_star: "Grand nettoyage" };
+      this.afficherMessage("✨ Combo : " + (noms[combo] || "Étoile + " + combo.split("_")[1]) + " !", 1000);
+    }
+    this.derniereCombo = combo;
+    // Les matches classiques éventuels sont traités par la boucle de cascades ensuite
+    await this.executerEffacement(initiales, [], cles);
+    await this.faireTomber();
+  }
+
+  /** Boucle : matches -> effacement -> gravité -> remplissage, jusqu'à stabilité. */
+  async boucleCascades(casesEchangees = []) {
+    let premier = true;
+    while (true) {
+      const groupes = this.board.trouverMatches();
+      if (groupes.length === 0) break;
+      this.changerEtat(ETAT.RESOLVING);
+      const { cases, creations } = this.board.analyserMatches(groupes, premier ? casesEchangees : []);
+      await this.executerEffacement(cases, creations);
+      await this.faireTomber();
+      premier = false;
+    }
+  }
+
+  /** Efface (logique) puis anime pop + particules, compte les objectifs. */
+  async executerEffacement(cases, creations = [], cles = new Map()) {
+    const { effacees, crees, vols } = this.board.effacer(cases, creations, cles);
+    crees.forEach(({ piece }) => {
+      this.log.powerUp("crees", piece.special);
+      const cle = POWERUPS[piece.special].cle;   // 1re apparition dans la partie : nom + description
+      if (!this.puVus.has(cle)) { this.puVus.add(cle); this.afficherMessage(txt("powerup." + cle) + "\n" + txt("powerup." + cle + ".desc"), 1600); }
+    });
+    effacees.forEach(({ piece, remplacee }) => {
+      if (piece.special && !remplacee) this.log.powerUp("actives", piece.special);
+      const o = this.objectifs.find(o => o.type === piece.type && !piece.special || o.type === piece.type && piece.special && piece.special !== "couleur");
+      if (o && o.restant > 0) o.restant--;
+      this.fantomes.push(piece);
+    });
+    const anims = effacees.map(({ piece }) => this.animerDisparition(piece));
+    crees.forEach(({ r, c, piece }) => {
+      const v = this.vue(piece); v.x = c; v.y = r; v.echelle = 0.2;
+      anims.push(this.animator.tween(v, { echelle: 1 }, CONFIG.durees.pop * 1.4, Easing.sortieBack));
+    });
+    await Promise.all(anims);
+    this.fantomes = [];
+    if (vols.length) await this.traiterVols(vols);
+  }
+
+  /** Envol des cloches : animation vers la cible, puis effacement (avec power-up porté éventuel). */
+  async traiterVols(vols) {
+    const B = this.board, types = this.objectifs.filter(o => o.restant > 0).map(o => o.type), exclus = new Set(), cibles = [];
+    await Promise.all(vols.map(v => {
+      const cible = B.choisirCible(v, types, exclus);
+      if (!cible) return Promise.resolve();
+      exclus.add(cible.r * B.C + cible.c); cibles.push({ ...cible, porte: v.porte });
+      const sprite = { x: v.c, y: v.r, echelle: 1, porte: v.porte };
+      this.cloches.push(sprite);
+      this.log.powerUp("vols", "cloche");
+      return this.animator.tween(sprite, { echelle: 1.5 }, 120, Easing.sortieQuad)
+        .then(() => this.animator.tween(sprite, { x: cible.c, y: cible.r, echelle: 1 }, 380, Easing.sortieQuad))
+        .then(() => { this.cloches = this.cloches.filter(s => s !== sprite); });
+    }));
+    cibles.forEach(c => { const p = B.grille[c.r][c.c]; if (p && c.porte) p.special = c.porte; });
+    this.dernieresCibles = cibles;
+    if (cibles.length) await this.executerEffacement(cibles);
+  }
+  animerDisparition(piece) {
+    const v = this.vue(piece), R = this.renderer;
+    if (R) for (let i = 0; i < 5; i++) this.particules.push({
+      x: R.ox + (v.x + .5) * R.taille, y: R.oy + (v.y + .5) * R.taille,
+      vx: (Math.random() - .5) * .4, vy: (Math.random() - .8) * .4, vie: 1, taille: 2 + Math.random() * 3,
+      couleur: ["#ffb347", "#ff7b54", "#ffd56b", "#fff"][i % 4] });
+    return this.animator.tween(v, { echelle: 1.3, alpha: 0 }, CONFIG.durees.pop, Easing.entreeQuad);
+  }
+  majParticules(dt) {
+    this.particules = this.particules.filter(p => {
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 0.0008 * dt; p.vie -= dt / 500; return p.vie > 0;
+    });
+  }
+  /** Gravité + remplissage animés (easing avec rebond). */
+  async faireTomber() {
+    this.changerEtat(ETAT.FALLING);
+    const mvts = [...this.board.appliquerGravite(), ...this.board.remplir()];
+    await Promise.all(mvts.map(m => {
+      const v = this.vue(m.piece); v.x = m.c;
+      if (m.deR < 0) { v.y = m.deR; v.echelle = 1; v.alpha = 1; }
+      const dist = m.versR - v.y;
+      return this.animator.tween(v, { y: m.versR }, 120 + CONFIG.durees.chuteParCase * dist, Easing.sortieRebond);
+    }));
+    this.changerEtat(ETAT.RESOLVING);
+  }
+
+  /** Après stabilisation : victoire, défaite, mélange ou retour à IDLE. */
+  async finDeCoup() {
+    // Victoire vérifiée après stabilisation des cascades, puis bonus de fin
+    if (this.objectifs.every(o => o.restant === 0)) {
+      this.coupsAvantRush = this.coups;      // meilleur résultat = coups restants AVANT le bonus
+      await this.sweetRush(); return this.terminer(true);
+    }
+    if (this.coups <= 0) return this.terminer(false);
+    if (!this.board.aUnCoupPossible()) {
+      this.afficherMessage("Mélange !", 0); await attendre(600);
+      this.board.melanger();
+      await this.animerPositions();
+      this.message = null;
+    }
+    this.changerEtat(ETAT.IDLE);
+  }
+  /** Replace visuellement toutes les pièces à leur case logique. */
+  animerPositions() {
+    return Promise.all(this.board.cases().filter(({ r, c }) => this.board.grille[r][c])
+      .map(({ r, c }) => this.animator.tween(this.vue(this.board.grille[r][c]), { x: c, y: r }, 400)));
+  }
+
+  /**
+   * Bonus de fin « Sweet Rush » : chaque coup restant transforme une pièce
+   * aléatoire en Couteau/Poêle, puis tous explosent en séquence. Tap = accélérer.
+   */
+  async sweetRush() {
+    if (!BONUS_FIN.actif || this.coups <= 0) return;
+    this.changerEtat(ETAT.RESOLVING);
+    this.rush = { passer: false, transformes: 0, declenches: 0 };
+    const pause = ms => this.rush.passer ? Promise.resolve() : attendre(ms);
+    this.afficherMessage("✨ Sweet Rush ! ✨\n(touche pour passer)", 1200);
+    await pause(700);
+    const B = this.board;
+    while (this.coups > 0) {
+      const libres = B.cases().filter(({ r, c }) => B.grille[r][c] && !B.grille[r][c].special);
+      if (!libres.length) break;
+      const { r, c } = libres[Math.floor(Math.random() * libres.length)];
+      const p = B.grille[r][c];
+      p.special = BONUS_FIN.types[Math.floor(Math.random() * BONUS_FIN.types.length)];
+      this.coups--; this.rush.transformes++;
+      const v = this.vue(p); v.echelle = 0.3;
+      this.animator.tween(v, { echelle: 1 }, 220, Easing.sortieBack);
+      await pause(110);
+    }
+    await pause(300);
+    // Déclenchement en séquence jusqu'à ce qu'il ne reste plus aucun special ligne/bombe
+    let garde = 0;
+    while (garde++ < 200) {
+      const sp = B.cases().find(({ r, c }) => B.grille[r][c] && B.grille[r][c].special && B.grille[r][c].special !== "couleur");
+      if (!sp) break;
+      // Explosions enchaînées sans attendre la gravité (rythme rapide), chute groupée ensuite
+      this.rush.declenches++;
+      await this.executerEffacement([sp]);
+      await pause(40);
+      const reste = B.cases().some(({ r, c }) => B.grille[r][c] && B.grille[r][c].special && B.grille[r][c].special !== "couleur");
+      if (!reste) { await this.faireTomber(); await this.boucleCascades(); }
+    }
+    if (!B.estPleine()) { await this.faireTomber(); await this.boucleCascades(); }
+    this.log.data.sweetRush = { transformes: this.rush.transformes, declenchements: this.rush.declenches, passe: this.rush.passer };
+    this.rush = null;
+  }
+
+  terminer(victoire) {
+    this.changerEtat(ETAT.END);
+    this.log.fin(victoire ? "victoire" : "defaite");
+    if (victoire) this.log.data.coupsRestantsAvantBonus = this.coupsAvantRush;
+    Progres.enregistrer(this.indexNiveau, this.niveau.id, victoire, victoire ? this.coupsAvantRush : 0);
+    UI.afficherFin(victoire, this);
+  }
+  /** Bouton « +5 coups » */
+  continuer() { this.log.evenement("plus5"); this.coups += 5; UI.cacher(); this.changerEtat(ETAT.IDLE); }
+  rejouer() { if (!this.log.data.resultat) this.log.fin("abandon"); UI.cacher(); this.demarrer(); }
+  niveauSuivant() { if (!this.log.data.resultat) this.log.fin("abandon"); UI.cacher(); this.demarrer((this.indexNiveau + 1) % NIVEAUX.length); }
+  allerNiveau(i) { if (!this.log.data.resultat) this.log.fin("abandon"); UI.cacher(); this.demarrer(i); }
+
+  /* ---------- Outils de debug ---------- */
+  debugGagner() { if (this.etat !== ETAT.IDLE) return; this.log.evenement("debug_gagner");
+    this.objectifs.forEach(o => o.restant = 0); this.finDeCoup(); }
+  debugPerdre() { if (this.etat !== ETAT.IDLE) return; this.log.evenement("debug_perdre");
+    this.coups = 0; this.terminer(false); }
+  debugPlus5() { if (this.etat === ETAT.END) this.continuer(); else { this.coups += 5; this.log.evenement("debug_plus5"); } }
+  async debugMelanger() {
+    if (this.etat !== ETAT.IDLE) return; this.changerEtat(ETAT.RESOLVING); this.log.evenement("debug_melanger");
+    this.board.melanger();
+    await this.animerPositions();
+    this.changerEtat(ETAT.IDLE);
+  }
+  debugIndice() { this.indice = this.board.trouverCoupPossible(); }
+  debugPoserSpecial(cs, special) {
+    const p = this.board.get(cs.r, cs.c); if (!p) return;
+    if (special === "couleur") p.type = -1; else if (p.type < 0) p.type = this.board.typeAleatoire();
+    p.special = special; this.debug.placer = null; this.log.evenement("debug_place_" + special);
+    DebugUI.maj();
+  }
+}
+
+/* =====================================================================
+ * 6b. PLAYTEST LOG – toujours actif, une entrée par partie (session)
+ * ===================================================================== */
+class PlaytestLog {
+  constructor(jeu) {
+    this.jeu = jeu; this.dernier = performance.now();
+    this.data = { version: VERSION, niveau: jeu.niveau.id, tutoriel: jeu.niveau.tutorial || null, targetWinRate: jeu.niveau.targetWinRate, debut: new Date().toISOString(),
+      coupsJoues: 0, echangesInvalides: 0, tempsParCoupMs: [], coups: [],
+      powerUps: { crees: {}, actives: {} }, evenements: [], resultat: null, coupsRestants: null, dureeMs: null };
+    this.t0 = performance.now();
+    this.data.sid = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
+    this.sauver();
+  }
+  sauver() { Logs.sauver(this.data); }
+  coup(a, b, pa, pb) {
+    const t = performance.now(), d = Math.round(t - this.dernier); this.dernier = t;
+    this.data.coupsJoues++; this.data.tempsParCoupMs.push(d);
+    this.data.coups.push({ n: this.data.coupsJoues, de: [a.r, a.c], vers: [b.r, b.c], ms: d,
+      specials: [pa.special, pb.special].filter(Boolean) });
+    this.sauver();
+  }
+  invalide() { this.data.echangesInvalides++; this.sauver(); }
+  powerUp(cat, type) { const o = this.data.powerUps[cat] = this.data.powerUps[cat] || {}; o[type] = (o[type] || 0) + 1; }
+  evenement(nom) { this.data.evenements.push({ nom, coup: this.data.coupsJoues, ms: Math.round(performance.now() - this.t0) }); this.sauver(); }
+  fin(resultat) {
+    this.evenement("fin_" + resultat);
+    this.data.resultat = resultat; this.data.coupsRestants = this.jeu.coups;
+    this.data.objectifsRestants = this.jeu.objectifs.map(o => ({ piece: o.cle, restant: o.restant }));
+    this.data.dureeMs = Math.round(performance.now() - this.t0);
+    const tps = this.data.tempsParCoupMs; this.data.tempsMoyenMs = tps.length ? Math.round(tps.reduce((x, y) => x + y, 0) / tps.length) : 0;
+    this.sauver();
+  }
+}
+
+/** Copie un texte dans le presse-papiers (avec repli execCommand pour file://). */
+async function copierTexte(txt) {
+  window.__dernierLogCopie = txt;
+  try { await navigator.clipboard.writeText(txt); return true; } catch (e) {
+    const ta = document.createElement("textarea"); ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select(); let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e2) {} ta.remove(); return ok;
+  }
+}
+
+/* =====================================================================
+ * 7. UI – écran de fin (DOM)
+ * ===================================================================== */
+const UI = {
+  afficherFin(victoire, jeu) {
+    document.getElementById("titreFin").textContent = (victoire ? "🎉 " : "🔥 ") + txt(victoire ? "win.title" : "lose.title");
+    document.getElementById("texteFin").textContent = victoire ? txt("win.text")
+      : txt("lose.text") + "\nIl reste : " + jeu.objectifs.filter(o => o.restant > 0).map(o => o.restant + " " + CONFIG.types[o.type]).join(", ");
+    const p5 = document.getElementById("btnPlus5"), sv = document.getElementById("btnSuivant"), rj = document.getElementById("btnRejouer");
+    p5.textContent = txt("lose.extra_moves"); sv.textContent = txt("win.button");
+    rj.textContent = victoire ? "Rejouer" : txt("lose.retry");
+    p5.style.display = victoire ? "none" : "block"; sv.style.display = victoire ? "block" : "none";
+    document.getElementById("overlay").classList.add("show");
+  },
+  cacher() { document.getElementById("overlay").classList.remove("show"); }
+};
+
+/* =====================================================================
+ * 7b. DEBUG UI – ?debug=1 ou touche D
+ * ===================================================================== */
+const DebugUI = {
+  init(jeu) {
+    this.jeu = jeu; const el = this.el = document.getElementById("debug");
+    if (/[?&]debug=1/.test(location.search)) el.classList.add("show");
+    window.addEventListener("keydown", e => { if (e.key === "d" || e.key === "D") el.classList.toggle("show"); });
+    document.getElementById("dbgTete").onclick = () => { el.classList.toggle("replie");
+      document.getElementById("dbgFleche").textContent = el.classList.contains("replie") ? "▸" : "▾"; };
+    el.querySelectorAll("button[data-a]").forEach(b => b.onclick = () => {
+      const a = b.dataset.a;
+      if (a === "gagner") jeu.debugGagner(); else if (a === "perdre") jeu.debugPerdre();
+      else if (a === "plus5") jeu.debugPlus5(); else if (a === "melanger") jeu.debugMelanger();
+      else if (a === "indice") jeu.debugIndice();
+      else if (a === "ralenti") { jeu.debug.vitesse = jeu.debug.vitesse === 1 ? 0.25 : 1; this.maj(); }
+      else if (a === "log") this.copierLog(b);
+      else if (a === "effacerLogs") { Logs.effacer(); b.textContent = "✔ Logs effacés"; setTimeout(() => b.textContent = "🗑 Effacer les logs", 1200); }
+      else if (a === "toutDebloquer") { Progres.toutDebloquer(); Menu.construire(); }
+      else if (a === "resetProgres") { Progres.reset(); Menu.construire(); }
+    });
+    el.querySelectorAll("button[data-p]").forEach(b => b.onclick = () => {
+      jeu.debug.placer = jeu.debug.placer === b.dataset.p ? null : b.dataset.p; this.maj(); });
+    const sel = document.getElementById("dbgNiveau");
+    NIVEAUX.forEach((n, i) => { const o = document.createElement("option"); o.value = i;
+      o.textContent = `N${n.id} · ${n.moves} coups${n.tutorial ? " · tuto " + n.tutorial : ""}`; sel.appendChild(o); });
+    sel.onchange = () => jeu.allerNiveau(+sel.value);
+    setInterval(() => this.majStat(), 250); this.maj();
+  },
+  maj() {
+    const j = this.jeu;
+    document.getElementById("dbgRalenti").classList.toggle("on", j.debug.vitesse !== 1);
+    this.el.querySelectorAll("button[data-p]").forEach(b => b.classList.toggle("on", j.debug.placer === b.dataset.p));
+  },
+  majStat() {
+    const j = this.jeu, d = j.log.data;
+    document.getElementById("dbgStat").textContent = `FPS ${Math.round(j.fps)} | ${j.etat}${j.rush ? " | RUSH" : ""}`;
+    const sel = document.getElementById("dbgNiveau"); if (document.activeElement !== sel) sel.value = j.indexNiveau;
+    document.getElementById("dbgInfo").textContent =
+      `coups joués ${d.coupsJoues}  invalides ${d.echangesInvalides}\ncréés ${JSON.stringify(d.powerUps.crees)}\nactivés ${JSON.stringify(d.powerUps.actives)}`;
+  },
+  async copierLog(btn) {
+    const txt = JSON.stringify({ version: VERSION, stockage: Store.persistant ? "localStorage" : "mémoire", sessions: Logs.tous() }, null, 2);
+    const ok = await copierTexte(txt), ancien = btn.textContent;
+    btn.textContent = ok ? "✔ Copié !" : "✖ Échec copie"; setTimeout(() => btn.textContent = ancien, 1200);
+  }
+};
+
+/* =====================================================================
+ * 7c. MENU DES NIVEAUX + INTRO HISTOIRE
+ * ===================================================================== */
+const Menu = {
+  el: () => document.getElementById("ecranNiveaux"),
+  construire() {
+    const g = document.getElementById("grilleNiveaux"), p = Progres.lire(); g.innerHTML = "";
+    NIVEAUX.forEach((n, i) => {
+      const b = document.createElement("button"), ok = i < p.debloques, m = p.meilleurs[n.id];
+      b.className = "carteNiv" + (ok ? "" : " verrou") + (m && m.victoires ? " gagne" : "");
+      b.dataset.index = i; b.disabled = !ok;
+      b.innerHTML = `<b>${ok ? "" : "🔒 "}Niveau ${n.id}</b><div class="obj">${n.goals.map(o => (PIECES[o.piece] || "") + "×" + o.count).join(" ")}</div>` +
+        `<div class="best">${!ok ? "Verrouillé" : m && m.victoires ? "⭐ Meilleur : " + m.meilleursCoupsRestants + " coup(s) restant(s)" : n.moves + " coups · pas encore réussi"}</div>`;
+      if (ok) b.onclick = () => this.choisir(i);
+      g.appendChild(b);
+    });
+  },
+  ouvrir() { this.construire(); UI.cacher(); this.el().classList.add("show"); },
+  fermer() { this.el().classList.remove("show"); },
+  choisir(i) {
+    this.fermer();
+    // L'intro n'est montrée qu'une fois, avant le niveau 1
+    if (i === 0 && !Store.get(CLES.intro, false)) Intro.jouer(() => Menu.jeu.allerNiveau(0));
+    else Menu.jeu.allerNiveau(i);
+  }
+};
+const Intro = {
+  cles: ["intro.1", "intro.2", "intro.3"],
+  jouer(suite) {
+    const el = document.getElementById("intro"), bulle = document.getElementById("bulle");
+    let i = 0;
+    const fin = () => { el.classList.remove("show"); el.onclick = null; Store.set(CLES.intro, true); suite(); };
+    const montrer = () => { bulle.style.animation = "none"; void bulle.offsetWidth; bulle.style.animation = ""; bulle.textContent = txt(this.cles[i]); };
+    el.onclick = () => { i++; if (i >= this.cles.length) fin(); else montrer(); };
+    document.getElementById("btnPasser").onclick = e => { e.stopPropagation(); fin(); };
+    montrer(); el.classList.add("show");
+  }
+};
+
+/* =====================================================================
+ * 8. DÉMARRAGE (uniquement dans un navigateur ; sous Node on exporte la logique)
+ * ===================================================================== */
+if (typeof document !== "undefined" && document.getElementById("jeu")) {
+  const m = /[?&]niveau=(\d+)/.exec(location.search);   // ?niveau=4 pour aller directement au niveau 4
+  const jeu = new Game(document.getElementById("jeu"), m ? NIVEAUX.findIndex(n => n.id === +m[1]) : 0);
+  document.getElementById("btnPlus5").onclick = () => jeu.continuer();
+  document.getElementById("btnRejouer").onclick = () => jeu.rejouer();
+  document.getElementById("btnSuivant").onclick = () => jeu.niveauSuivant();
+  document.getElementById("btnLogFin").onclick = () => DebugUI.copierLog(document.getElementById("btnLogFin"));
+  document.getElementById("btnNiveaux").onclick = () => Menu.ouvrir();
+  document.getElementById("btnNiveauxFin").onclick = () => { if (!jeu.log.data.resultat) jeu.log.fin("abandon"); Menu.ouvrir(); };
+  Menu.jeu = jeu;
+  if (!m) Menu.ouvrir();          // écran de sélection au démarrage (sauf ?niveau=N)
+  DebugUI.init(jeu);
+  window.chefMatch = jeu; // accès debug depuis la console
+}
+if (typeof module !== "undefined") module.exports = { categorie, Store, Logs, Progres, Board, creerPiece, CONFIG, NIVEAUX, TEXTES, PIECES, TUTOS, BONUS_FIN, txt };
+</script>
+</body>
+</html>
