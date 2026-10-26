@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Chef Match – v0.4-dev</title>
+<title>Chef Match – v0.4.1</title>
 <style>
   html,body{margin:0;height:100%;background:#3b2418 url("assets/bg_terrace.jpg") center/cover no-repeat;overflow:hidden;touch-action:none;
     font-family:"Trebuchet MS",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
@@ -81,7 +81,8 @@
   .solde.pulse{animation:pop .5s ease-out}
   .solde .gain{position:absolute;left:50%;top:-4px;transform:translateX(-50%);color:#e0703a;font-size:15px;font-weight:bold;pointer-events:none;animation:gainVol 1.4s ease-out forwards;text-shadow:0 1px 0 #fff}
   @keyframes gainVol{0%{opacity:0;transform:translate(-50%,6px) scale(.6)}20%{opacity:1;transform:translate(-50%,-6px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-38px) scale(1)}}
-  #soldeFin{margin:4px 0 2px}
+  #soldeFin{margin:6px 0 4px;background:#5a3220;color:#fff4e0;font-size:18px;padding:6px 16px;box-shadow:0 2px 0 #3b2418}   /* v0.4.1 : lisible sur le panneau crème */
+  #soldeFin .gain{color:#ffd56b;text-shadow:0 1px 2px #000}
   .barreCarte{display:flex;gap:10px;align-items:center;margin:2px 0 4px}
   .btnAlt{border:none;border-radius:12px;padding:6px 12px;background:#7aa35a;color:#fff;font-weight:bold;font-family:inherit;cursor:pointer;font-size:14px}
   .teteEcran{display:flex;align-items:center;justify-content:space-between;gap:8px;width:min(94vw,440px);color:#fff4e0;font-size:22px;margin:16px 0 10px}
@@ -131,7 +132,7 @@
   <button id="btnLogFin">📋 Copier le log</button>
 </div></div>
 
-<div id="version">v0.4-dev</div>
+<div id="version">v0.4.1</div>
 <button id="btnNiveaux">☰ Niveaux</button>
 <button id="btnRenover">🔨 Rénover <span id="badgeRenover"></span></button>
 <div id="ecranRenovation" class="ecran">
@@ -173,7 +174,7 @@
 /* =====================================================================
  * 1. CONFIGURATION & NIVEAU (données pures, futur fichier JSON)
  * ===================================================================== */
-const VERSION = "v0.4-dev";
+const VERSION = "v0.4.1";
 const CONFIG = {
   types: ["🍕","🍔","🍣","🥐","🍩","🥗"], // index = type de pièce
   durees: { swap: 160, rebond: 130, pop: 180, chuteParCase: 70, spawn: 160 }, // ms
@@ -2693,6 +2694,37 @@ const Renovation = {
 };
 Renovation.enregistrerLieu(RENOVATION_SALLE);
 
+/**
+ * v0.4.1 : migrations de sauvegarde, appliquées une seule fois (clé chefmatch.migrations).
+ *  - etoiles_retro : niveaux gagnés avant le système d'étoiles (v0.2.x) -> 1 étoile chacun, rétroactivement.
+ *    « gagné » = Progres.meilleurs[id].victoires > 0, ou niveau dépassé (index < debloques - 1).
+ *  - or_depart : sauvegarde économie antérieure à l'économie v1 -> +orDepart (300) une fois.
+ *    Nouvelle partie (pas de sauvegarde économie) : rien à créditer (le solde par défaut vaut déjà orDepart).
+ */
+const Migrations = {
+  CLE: "chefmatch.migrations",
+  faites() { return Store.get(this.CLE, {}) || {}; },
+  appliquer() {
+    const f = this.faites(), res = {};
+    if (!f.or_depart) {
+      const brut = Store.get(Economie.CLE, null);
+      if (brut && typeof brut.or === "number") { Economie.ajouterOr(CONFIG_ECONOMIE.orDepart, "migration_or_depart"); res.or = CONFIG_ECONOMIE.orDepart; }
+      f.or_depart = new Date().toISOString();
+    }
+    if (!f.etoiles_retro) {
+      const p = Progres.lire(), e = Economie.lire(); let n = 0;
+      NIVEAUX.forEach((N, i) => {
+        const gagne = ((p.meilleurs[N.id] || {}).victoires || 0) > 0 || i < p.debloques - 1;
+        if (gagne && !e.niveauxEtoiles.includes(N.id)) { e.niveauxEtoiles.push(N.id); e.etoiles += CONFIG_ECONOMIE.etoilesParVictoire; n += CONFIG_ECONOMIE.etoilesParVictoire; }
+      });
+      if (n) { Economie.journaliser(e, { type: "etoiles", n, raison: "migration_retroactive" }); Economie.ecrire(e); }
+      res.etoiles = n; f.etoiles_retro = new Date().toISOString();
+    }
+    Store.set(this.CLE, f); return res;
+  },
+  reset() { Store.del(this.CLE); }
+};
+
 /** v0.4-dev : vies (max 5, +1 / 30 min, recharge en or) — affichées mais infinies avant le niveau 100. */
 const Vies = {
   CLE: "chefmatch.vies",
@@ -3886,9 +3918,10 @@ class Game {
     // v0.3 : livraison des plats arrivés en bas, puis nouvelle chute
     let sortis, garde = 0;
     while ((sortis = this.board.collecterPlats()).length && garde++ < 20) {
-      sortis.forEach(({ piece }) => {
+      sortis.forEach(({ piece, r, c }) => {
         const o = this.objectifs.find(o => o.genre === "livraison"); if (o && o.restant > 0) o.restant--;
         if (this.log && this.log.powerUp) this.log.powerUp("livraisons", "plat");
+        if (this.log && this.log.livraison) this.log.livraison(r, c);
         this.fantomes.push(piece);
       });
       await Promise.all(sortis.map(({ piece }) => this.animator.tween(this.vue(piece), { y: this.vue(piece).y + 1, alpha: 0 }, 260, Easing.entreeQuad)));
@@ -4054,13 +4087,31 @@ class PlaytestLog {
     this.data.coupsJoues++; this.data.tempsParCoupMs.push(d);
     this.data.coups.push({ n: this.data.coupsJoues, de: [a.r, a.c], vers: [b.r, b.c], ms: d,
       specials: [pa.special, pb.special].filter(Boolean) });
+    { const pl = this.positionsPlats(); if (pl) this.data.coups[this.data.coups.length - 1].plats = pl; }   // v0.4.1 : avant le coup
     this.sauver();
   }
   invalide() { this.data.echangesInvalides++; this.sauver(); }
   bloque() { this.data.echangesBloques = (this.data.echangesBloques || 0) + 1; this.sauver(); }
   powerUp(cat, type) { const o = this.data.powerUps[cat] = this.data.powerUps[cat] || {}; o[type] = (o[type] || 0) + 1; }
+  /** v0.4.1 : livraison d'un plat (coup, case de départ) */
+  livraison(r, c) { (this.data.livraisons = this.data.livraisons || []).push({ coup: this.data.coupsJoues, r, c, ms: Math.round(performance.now() - this.t0) }); }
   evenement(nom) { this.data.evenements.push({ nom, coup: this.data.coupsJoues, ms: Math.round(performance.now() - this.t0) }); this.sauver(); }
+  /** v0.4.1 : onglet caché -> clôture provisoire « interrompu » (sauvée tout de suite). */
+  cacher() { if (this.data.resultat) return; this.fin("interrompu"); this.data.provisoire = true; this.sauver(); }
+  reprendre() {
+    if (!this.data.provisoire) return;
+    delete this.data.provisoire; this.data.resultat = null; this.data.coupsRestants = null; this.data.dureeMs = null; delete this.data.objectifsRestants;
+    const ev = this.data.evenements; if (ev.length && ev[ev.length - 1].nom === "fin_interrompu") ev.pop();
+    this.evenement("reprise");
+  }
+  /** v0.4.1 : plats sur le plateau [r, c, distance] (distance = cases mobiles sous le plat ; 0 = va être livré, 1 = avant-dernière rangée). */
+  positionsPlats() {
+    const B = this.jeu.board; if (!B || !B.platsInit || !B.platsInit.length) return null;
+    return B.positionsPlats().map(({ r, c }) => { let d = 0; for (let y = r + 1; y < B.L; y++) if (B.jouable(y, c) && !B.fixe(y, c)) d++; return [r, c, d]; });
+  }
   fin(resultat) {
+    { const pl = this.positionsPlats(); if (pl) this.data.platsFin = pl; }
+    if (this.data.provisoire && resultat !== "interrompu") { delete this.data.provisoire; const ev = this.data.evenements; if (ev.length && ev[ev.length - 1].nom === "fin_interrompu") ev.pop(); }
     this.evenement("fin_" + resultat);
     this.data.resultat = resultat; this.data.coupsRestants = this.jeu.coups;
     this.data.objectifsRestants = this.jeu.objectifs.map(o => ({ piece: o.cle, restant: o.restant }));
@@ -4356,6 +4407,7 @@ if (typeof document !== "undefined" && document.getElementById("jeu")) {
   document.getElementById("btnNiveaux").onclick = () => Menu.ouvrir();
   document.getElementById("btnNiveauxFin").onclick = () => { jeu.quitterSession(); Menu.ouvrir(); };
   Menu.jeu = jeu;
+  { const mg = Migrations.appliquer(); if (mg.or || mg.etoiles) console.info("[Migrations] v0.4.1", mg); }
   journaliserNiveauxInvalides();
   document.getElementById("btnBoutique").onclick = () => Boutique.ouvrir(() => Solde.maj());
   document.getElementById("boutiqueFermer").onclick = () => Boutique.fermer();
@@ -4373,8 +4425,14 @@ if (typeof document !== "undefined" && document.getElementById("jeu")) {
   // v0.3.4 : fermeture/rechargement de l'onglet -> session close « interrompu » (+ durée) au lieu de null
   const interrompre = () => { if (jeu.log && !jeu.log.data.resultat) jeu.log.fin("interrompu"); };
   window.addEventListener("pagehide", interrompre); window.addEventListener("beforeunload", interrompre);
+  // v0.4.1 : sur mobile l'onglet peut être tué sans pagehide -> dès qu'il est caché, session close « interrompu » (provisoire) ;
+  // si le joueur revient, la session est rouverte (résultat effacé, événement « reprise »).
+  document.addEventListener("visibilitychange", () => {
+    const L = jeu.log; if (!L) return;
+    if (document.visibilityState === "hidden") L.cacher(); else L.reprendre();
+  });
 }
-if (typeof module !== "undefined") module.exports = { Game, ETAT, categorie, Store, Logs, Progres, Board, creerPiece, creerPlat, CONFIG, NIVEAUX, NIVEAU_DEMO, BLOQUEURS, TYPE_PLAT, Economie, CONFIG_ECONOMIE, Visuels, IMAGES_OBSTACLES, Renovation, DATA_RENOVATION, RENOVATION_TERRASSE, RENOVATION_SALLE, validerNiveau, VALIDATION_NIVEAUX, Vies, coffreDepuisArtStory, TEXTES, Solde, Boutique, PreNiveau, lieuAnnonce, NOMS_LIEUX, PIECES, TUTOS, BONUS_FIN, txt };
+if (typeof module !== "undefined") module.exports = { Game, ETAT, categorie, Store, Logs, Progres, Board, creerPiece, creerPlat, CONFIG, NIVEAUX, NIVEAU_DEMO, BLOQUEURS, TYPE_PLAT, Economie, CONFIG_ECONOMIE, Visuels, IMAGES_OBSTACLES, Renovation, DATA_RENOVATION, RENOVATION_TERRASSE, RENOVATION_SALLE, Migrations, PlaytestLog, validerNiveau, VALIDATION_NIVEAUX, Vies, coffreDepuisArtStory, TEXTES, Solde, Boutique, PreNiveau, lieuAnnonce, NOMS_LIEUX, PIECES, TUTOS, BONUS_FIN, txt };
 </script>
 </body>
 </html>
