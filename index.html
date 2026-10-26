@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Chef Match – v0.3.3</title>
+<title>Chef Match – v0.3.4</title>
 <style>
   html,body{margin:0;height:100%;background:#3b2418 url("assets/bg_terrace.jpg") center/cover no-repeat;overflow:hidden;touch-action:none;
     font-family:"Trebuchet MS",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
@@ -50,7 +50,7 @@
     background:#6b8fb3}
   #renoScene .couche{position:absolute;inset:0;background:center/cover no-repeat}
   #renoApres{transition:opacity 1.4s ease-in-out}
-  #renoScene img.overlay{position:absolute;aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 4px 3px rgba(0,0,0,.35))}
+  #renoScene img.overlay{position:absolute;aspect-ratio:9/16;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 4px 3px rgba(0,0,0,.35))}
   #renoScene img.overlay.nouveau{animation:fondu 1.2s ease-out}
   @keyframes fondu{from{opacity:0;transform:translate(-50%,-50%) scale(.6)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
   #renoEclat{position:absolute;left:50%;top:45%;font-size:64px;transform:translate(-50%,-50%) scale(0);pointer-events:none}
@@ -97,7 +97,7 @@
   <button id="btnLogFin">📋 Copier le log</button>
 </div></div>
 
-<div id="version">v0.3.3</div>
+<div id="version">v0.3.4</div>
 <button id="btnNiveaux">☰ Niveaux</button>
 <button id="btnRenover">🔨 Rénover <span id="badgeRenover"></span></button>
 <div id="ecranRenovation" class="ecran">
@@ -131,7 +131,7 @@
 /* =====================================================================
  * 1. CONFIGURATION & NIVEAU (données pures, futur fichier JSON)
  * ===================================================================== */
-const VERSION = "v0.3.3";
+const VERSION = "v0.3.4";
 const CONFIG = {
   types: ["🍕","🍔","🍣","🥐","🍩","🥗"], // index = type de pièce
   durees: { swap: 160, rebond: 130, pop: 180, chuteParCase: 70, spawn: 160 }, // ms
@@ -771,7 +771,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 16,
-      "moves": 22,
+      "moves": 15,
       "colors": [
         "tomato",
         "croissant",
@@ -916,7 +916,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 18,
-      "moves": 22,
+      "moves": 19,
       "colors": [
         "tomato",
         "croissant",
@@ -1037,7 +1037,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 20,
-      "moves": 26,
+      "moves": 24,
       "colors": [
         "tomato",
         "croissant",
@@ -1433,18 +1433,36 @@ const RENOVATION_TERRASSE = {
       ],
       "image": "assets/task_sign.png"
     }
-  ]
+  ],
+  "next": {
+    "location": "dining_room",
+    "unlock_level": 13,
+    "dialogue": [
+      {
+        "who": "margot",
+        "text": "Ma chérie... la terrasse est magnifique, mais les clients vont vouloir entrer."
+      },
+      {
+        "who": "emma",
+        "text": "La salle. Personne n'y est entré depuis la mort de Mamie Rose."
+      },
+      {
+        "who": "victor",
+        "text": "Une salle en ruine et une banque impatiente... Mon offre tient toujours, mademoiselle."
+      },
+      {
+        "who": "emma",
+        "text": "Gardez votre offre, Victor. On ouvre la salle !"
+      }
+    ]
+  }
 };
 const PERSONNAGES = { margot: "Margot", emma: "Emma", leo: "Léo", victor: "Victor", rose: "Rose" };
 const EMOJIS_TACHES = { clean_floor: "🧹", fix_railing: "🪵", place_tables: "🪑", add_chairs: "💺", hang_lights: "💡", install_sign: "🪧" };
 /* Placement des overlays 512×512 sur le décor portrait (réglé à l'œil sur terrace_before.jpg) : [x %, y %, largeur %] (centre) */
-const POSITIONS_OVERLAYS = {
-  clean_floor: [50, 90, 96],   // sol : bas, plein cadre
-  fix_railing: [50, 63, 52],    // rambarde : au fond, devant la mer
-  place_tables: [32, 80, 44],   // tables : premier plan gauche
-  add_chairs: [70, 82, 40],     // chaises : premier plan droit
-  hang_lights: [54, 21, 84],    // guirlandes : en haut, entre les façades
-  install_sign: [84, 40, 30]    // enseigne : façade droite, au-dessus du store
+const POSITIONS_OVERLAYS = {   // v0.3.4 : calques ArtStory plein cadre 1080×1920 posés en (0,0)
+  clean_floor: [50, 50, 100], fix_railing: [50, 50, 100], place_tables: [50, 50, 100],
+  add_chairs: [50, 50, 100], hang_lights: [50, 50, 100], install_sign: [50, 50, 100]
 };
 /** Format ArtStory -> format interne. Overlay = champ "image" de chaque tâche (pas de déduction depuis l'id). */
 function lieuDepuisArtStory(d, nom, coffre) {
@@ -1458,7 +1476,9 @@ const DATA_RENOVATION = {
   version: 2,
   lieux: [
     lieuDepuisArtStory(RENOVATION_TERRASSE, "La terrasse", { or: 500, booster: "bombe", nbBooster: 1 }),
-    { id: "salle", nom: "La salle", verrouille: true, annonce: "Bientôt : la salle du bistrot !",
+    { id: "salle", lieuArtStory: (RENOVATION_TERRASSE.next || {}).location || "dining_room", nom: "La salle", verrouille: true,
+      niveauDeblocage: (RENOVATION_TERRASSE.next || {}).unlock_level || null,
+      annonce: "Bientôt" + ((RENOVATION_TERRASSE.next || {}).unlock_level ? " (dès le niveau " + RENOVATION_TERRASSE.next.unlock_level + ")" : "") + " : la salle du bistrot !",
       // 1er dialogue : fourni par ArtStory (RENOVATION_TERRASSE.next.dialogue) sinon placeholder
       dialogue: ((RENOVATION_TERRASSE.next || {}).dialogue || []).map(l => typeof l === "string" ? l : (PERSONNAGES[l.who] || l.who) + " : " + l.text)
         .concat(((RENOVATION_TERRASSE.next || {}).dialogue || []).length ? [] : ["Emma : La terrasse brille... Prochaine étape : la salle de Mamie Rose. (placeholder)"]),
@@ -2147,13 +2167,19 @@ class Renderer {
     const dessinerPiece = (p) => {
       const v = j.vue(p); if (v.alpha <= 0) return;
       const pulse = j.indiceAuto && j.indiceAuto.cellules.some(x => j.board.grille[x.r][x.c] === p) ? 1 + 0.09 * Math.sin(temps / 160) : 1;
-      this.dessinerPiece(p, this.ox + (v.x + .5)*T, this.oy + (v.y + .5)*T, v.echelle * pulse, v.alpha, temps);
+      const vr = j.verrou, sec = vr && temps - vr.t < 450 && b.grille[vr.r] && b.grille[vr.r][vr.c] === p ? Math.sin((temps - vr.t) / 25) * T * .08 : 0;
+      this.dessinerPiece(p, this.ox + (v.x + .5)*T + sec, this.oy + (v.y + .5)*T, v.echelle * pulse, v.alpha, temps);
     };
     for (let r = 0; r < b.L; r++) for (let c = 0; c < b.C; c++) if (b.grille[r][c]) dessinerPiece(b.grille[r][c]);
     j.fantomes.forEach(dessinerPiece);  // pièces en train de disparaître
     g.restore();
     this.dessinerBloqueurs(temps);
     badgesNappe.forEach(([x, y, hp]) => this.badgePV(x, y, hp, true));
+    if (j.verrou && temps - j.verrou.t < 700) {   // cadenas bref (+ secousse) sur la case bloquée
+      const vr = j.verrou, k = (temps - vr.t) / 700, dx = Math.sin((temps - vr.t) / 25) * T * .08 * (1 - k);
+      g.save(); g.globalAlpha = 1 - k * k; g.font = `${Math.floor(T * .5)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+      g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("🔒", this.ox + (vr.c + .5)*T + dx, this.oy + (vr.r + .5)*T - T*.1*k); g.restore();
+    }
     // Cloches en vol
     j.cloches.forEach(v => {
       g.save(); g.translate(this.ox + (v.x + .5)*T, this.oy + (v.y + .5)*T); g.scale(v.echelle, v.echelle); g.rotate(Math.sin(v.x * 3) * .3);
@@ -2445,6 +2471,13 @@ class Game {
     if (!this.peutJouer()) return;
     const B = this.board, D = CONFIG.durees;
     const pa = B.get(a.r, a.c), pb = B.get(b.r, b.c);
+    // v0.3.4 : pièce sous glace/chaîne ou obstacle de case -> secousse + cadenas, loggé à part
+    if (B.jouable(a.r, a.c) && B.jouable(b.r, b.c) && (B.fixe(a.r, a.c) || B.fixe(b.r, b.c))) {
+      const cible = B.fixe(a.r, a.c) ? a : b;
+      this.verrou = { r: cible.r, c: cible.c, t: performance.now() };
+      this.log.bloque(a, b);
+      return;
+    }
     if (!pa || !pb) return;
     // Tutoriel : seul le coup surligné est accepté au premier coup
     const T = this.tutoCoup, estTuto = T && ((T.a.r===a.r&&T.a.c===a.c&&T.b.r===b.r&&T.b.c===b.c) || (T.a.r===b.r&&T.a.c===b.c&&T.b.r===a.r&&T.b.c===a.c));
@@ -2550,6 +2583,7 @@ class Game {
     });
     if (bloqueurs && bloqueurs.length) this.majObjectifsDynamiques();
     crees.forEach(({ piece }) => {
+      if (this.rush) { this.rush.crees[piece.special] = (this.rush.crees[piece.special] || 0) + 1; return; }   // comptés à part
       this.log.powerUp("crees", piece.special);
       const cle = POWERUPS[piece.special].cle;   // 1re apparition dans la partie : nom + description
       if (!this.puVus.has(cle)) { this.puVus.add(cle); this.afficherMessage(txt("powerup." + cle) + "\n" + txt("powerup." + cle + ".desc"), 1600); }
@@ -2665,7 +2699,7 @@ class Game {
   async sweetRush() {
     if (!BONUS_FIN.actif || this.coups <= 0) return;
     this.changerEtat(ETAT.RESOLVING);
-    this.rush = { passer: false, transformes: 0, declenches: 0 };
+    this.rush = { passer: false, transformes: 0, declenches: 0, crees: {} };
     const pause = ms => this.rush.passer ? Promise.resolve() : attendre(ms);
     this.afficherMessage("✨ Sweet Rush ! ✨\n(touche pour passer)", 1200);
     await pause(700);
@@ -2695,7 +2729,7 @@ class Game {
       if (!reste) { await this.faireTomber(); await this.boucleCascades(); }
     }
     if (!B.estPleine()) { await this.faireTomber(); await this.boucleCascades(); }
-    this.log.data.sweetRush = { transformes: this.rush.transformes, declenchements: this.rush.declenches, passe: this.rush.passer };
+    this.log.data.sweetRush = { transformes: this.rush.transformes, declenchements: this.rush.declenches, passe: this.rush.passer, crees: this.rush.crees };
     this.rush = null;
   }
 
@@ -2738,9 +2772,11 @@ class Game {
     this.coups += r.coups; UI.cacher(); this.changerEtat(ETAT.IDLE);
     await this.melangerSiBesoin("apres_plus5");   // FIX : la grille pouvait être bloquée au moment de la défaite
   }
-  rejouer() { if (!this.log.data.resultat) this.log.fin("abandon"); UI.cacher(); this.demarrer(); }
-  niveauSuivant() { if (!this.log.data.resultat) this.log.fin("abandon"); UI.cacher(); this.demarrer((this.indexNiveau + 1) % NIVEAUX.length); }
-  allerNiveau(i) { if (!this.log.data.resultat) this.log.fin("abandon"); UI.cacher(); this.demarrer(i); }
+  /** Session quittée sans résultat : « relance » si aucun coup joué, sinon « abandon ». */
+  quitterSession() { if (this.log && !this.log.data.resultat) this.log.fin(this.log.data.coupsJoues === 0 ? "relance" : "abandon"); }
+  rejouer() { this.quitterSession(); UI.cacher(); this.demarrer(); }
+  niveauSuivant() { this.quitterSession(); UI.cacher(); this.demarrer((this.indexNiveau + 1) % NIVEAUX.length); }
+  allerNiveau(i) { this.quitterSession(); UI.cacher(); this.demarrer(i); }
 
   /* ---------- Outils de debug ---------- */
   debugGagner() { if (this.etat !== ETAT.IDLE) return; this.log.evenement("debug_gagner");
@@ -2768,7 +2804,7 @@ class PlaytestLog {
   constructor(jeu) {
     this.jeu = jeu; this.dernier = performance.now();
     this.data = { version: VERSION, niveau: jeu.niveau.id, tutoriel: jeu.niveau.tutorial || null, targetWinRate: jeu.niveau.targetWinRate, debut: new Date().toISOString(),
-      coupsJoues: 0, echangesInvalides: 0, tempsParCoupMs: [], coups: [],
+      coupsJoues: 0, echangesInvalides: 0, echangesBloques: 0, tempsParCoupMs: [], coups: [],
       powerUps: { crees: {}, actives: {} }, evenements: [], resultat: null, coupsRestants: null, dureeMs: null };
     this.t0 = performance.now();
     this.data.sid = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
@@ -2783,6 +2819,7 @@ class PlaytestLog {
     this.sauver();
   }
   invalide() { this.data.echangesInvalides++; this.sauver(); }
+  bloque() { this.data.echangesBloques = (this.data.echangesBloques || 0) + 1; this.sauver(); }
   powerUp(cat, type) { const o = this.data.powerUps[cat] = this.data.powerUps[cat] || {}; o[type] = (o[type] || 0) + 1; }
   evenement(nom) { this.data.evenements.push({ nom, coup: this.data.coupsJoues, ms: Math.round(performance.now() - this.t0) }); this.sauver(); }
   fin(resultat) {
@@ -2864,7 +2901,7 @@ const DebugUI = {
     document.getElementById("dbgStat").textContent = `FPS ${Math.round(j.fps)} | ${j.etat}${j.rush ? " | RUSH" : ""}`;
     const sel = document.getElementById("dbgNiveau"); if (document.activeElement !== sel) sel.value = j.indexNiveau;
     document.getElementById("dbgInfo").textContent =
-      `coups joués ${d.coupsJoues}  invalides ${d.echangesInvalides}\ncréés ${JSON.stringify(d.powerUps.crees)}\nactivés ${JSON.stringify(d.powerUps.actives)}`;
+      `coups joués ${d.coupsJoues}  invalides ${d.echangesInvalides}  bloqués ${d.echangesBloques || 0}\ncréés ${JSON.stringify(d.powerUps.crees)}\nactivés ${JSON.stringify(d.powerUps.actives)}`;
   },
   async copierLog(btn) {
     const txt = JSON.stringify({ version: VERSION, stockage: Store.persistant ? "localStorage" : "mémoire", economie: Economie.lire(), sessions: Logs.tous() }, null, 2);
@@ -2979,11 +3016,14 @@ if (typeof document !== "undefined" && document.getElementById("jeu")) {
   document.getElementById("btnSuivant").onclick = () => jeu.niveauSuivant();
   document.getElementById("btnLogFin").onclick = () => DebugUI.copierLog(document.getElementById("btnLogFin"));
   document.getElementById("btnNiveaux").onclick = () => Menu.ouvrir();
-  document.getElementById("btnNiveauxFin").onclick = () => { if (!jeu.log.data.resultat) jeu.log.fin("abandon"); Menu.ouvrir(); };
+  document.getElementById("btnNiveauxFin").onclick = () => { jeu.quitterSession(); Menu.ouvrir(); };
   Menu.jeu = jeu;
   if (!m) Menu.ouvrir();          // écran de sélection au démarrage (sauf ?niveau=N)
   DebugUI.init(jeu);
   window.chefMatch = jeu; // accès debug depuis la console
+  // v0.3.4 : fermeture/rechargement de l'onglet -> session close « interrompu » (+ durée) au lieu de null
+  const interrompre = () => { if (jeu.log && !jeu.log.data.resultat) jeu.log.fin("interrompu"); };
+  window.addEventListener("pagehide", interrompre); window.addEventListener("beforeunload", interrompre);
 }
 if (typeof module !== "undefined") module.exports = { Game, ETAT, categorie, Store, Logs, Progres, Board, creerPiece, creerPlat, CONFIG, NIVEAUX, NIVEAU_DEMO, BLOQUEURS, TYPE_PLAT, Economie, CONFIG_ECONOMIE, Visuels, IMAGES_OBSTACLES, Renovation, DATA_RENOVATION, RENOVATION_TERRASSE, TEXTES, PIECES, TUTOS, BONUS_FIN, txt };
 </script>

@@ -1,0 +1,133 @@
+{
+  "location": "terrace",
+  "background_before": "assets/terrace_before.jpg",
+  "background_after": "assets/terrace_after.jpg",
+  "tasks": [
+    {
+      "id": "clean_floor",
+      "cost": 1,
+      "label": "Nettoyer le sol",
+      "dialogue": [
+        {
+          "who": "margot",
+          "text": "Ces dalles n'avaient pas vu un balai depuis le départ de Rose !"
+        },
+        {
+          "who": "emma",
+          "text": "On voit enfin la pierre. Mamie aurait été fière."
+        }
+      ],
+      "image": "assets/task_clean_floor.png"
+    },
+    {
+      "id": "fix_railing",
+      "cost": 2,
+      "label": "Réparer la rambarde",
+      "dialogue": [
+        {
+          "who": "leo",
+          "text": "Ta rambarde tenait avec de la ficelle. Je l'ai renforcée avec du bois de bateau."
+        },
+        {
+          "who": "emma",
+          "text": "Merci, Léo... Tu fais ça pour tous les nouveaux voisins ?"
+        },
+        {
+          "who": "leo",
+          "text": "Non."
+        }
+      ],
+      "image": "assets/task_railing.png"
+    },
+    {
+      "id": "place_tables",
+      "cost": 2,
+      "label": "Poser les tables",
+      "dialogue": [
+        {
+          "who": "victor",
+          "text": "Des tables ? Comme c'est touchant. Mon hôtel aura une terrasse dix fois plus grande."
+        },
+        {
+          "who": "emma",
+          "text": "La mienne aura de la vraie cuisine, Victor."
+        }
+      ],
+      "image": "assets/task_tables.png"
+    },
+    {
+      "id": "add_chairs",
+      "cost": 2,
+      "label": "Ajouter les chaises",
+      "dialogue": [
+        {
+          "who": "margot",
+          "text": "Ces chaises viennent du grenier de Rose. Il y avait aussi... une vieille boîte à ton nom."
+        },
+        {
+          "who": "emma",
+          "text": "Une boîte ? Pour moi ?"
+        }
+      ],
+      "image": "assets/task_chairs.png"
+    },
+    {
+      "id": "hang_lights",
+      "cost": 3,
+      "label": "Accrocher les guirlandes",
+      "dialogue": [
+        {
+          "who": "emma",
+          "text": "Waouh... Le port entier les voit briller."
+        },
+        {
+          "who": "leo",
+          "text": "Ça ressemble enfin à La Petite Marée d'avant."
+        }
+      ],
+      "image": "assets/task_garlands.png"
+    },
+    {
+      "id": "install_sign",
+      "cost": 2,
+      "label": "Installer l'enseigne",
+      "dialogue": [
+        {
+          "who": "margot",
+          "text": "« La Petite Marée » est de retour ! Tout le port va en parler !"
+        },
+        {
+          "who": "victor",
+          "text": "Profitez-en, mademoiselle. La banque, elle, n'attend pas."
+        },
+        {
+          "who": "emma",
+          "text": "Alors il est temps de rouvrir la salle."
+        }
+      ],
+      "image": "assets/task_sign.png"
+    }
+  ],
+  "next": {
+    "location": "dining_room",
+    "unlock_level": 13,
+    "dialogue": [
+      {
+        "who": "margot",
+        "text": "Ma chérie... la terrasse est magnifique, mais les clients vont vouloir entrer."
+      },
+      {
+        "who": "emma",
+        "text": "La salle. Personne n'y est entré depuis la mort de Mamie Rose."
+      },
+      {
+        "who": "victor",
+        "text": "Une salle en ruine et une banque impatiente... Mon offre tient toujours, mademoiselle."
+      },
+      {
+        "who": "emma",
+        "text": "Gardez votre offre, Victor. On ouvre la salle !"
+      }
+    ]
+  }
+}
