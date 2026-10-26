@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Chef Match – v0.3.2</title>
+<title>Chef Match – v0.3.3</title>
 <style>
   html,body{margin:0;height:100%;background:#3b2418 url("assets/bg_terrace.jpg") center/cover no-repeat;overflow:hidden;touch-action:none;
     font-family:"Trebuchet MS",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
@@ -46,8 +46,16 @@
   #renoTete{display:flex;align-items:center;justify-content:space-between;width:min(94vw,440px);color:#fff4e0;font-weight:bold;font-size:20px;margin:12px 0 8px}
   #renoEtoiles{background:#fff4e0;color:#5a3220;border-radius:14px;padding:4px 12px}
   #renoFermer{border:none;background:#c8834a;color:#fff;border-radius:10px;font-size:18px;padding:4px 10px;cursor:pointer}
-  #renoScene{position:relative;width:min(94vw,440px);height:min(52vh,330px);border-radius:18px;border:4px solid #c8834a;overflow:hidden;
-    background:#6b8fb3 url("assets/bg_terrace.jpg") center/cover}
+  #renoScene{position:relative;height:min(58vh,540px);aspect-ratio:9/16;max-width:94vw;border-radius:18px;border:4px solid #c8834a;overflow:hidden;
+    background:#6b8fb3}
+  #renoScene .couche{position:absolute;inset:0;background:center/cover no-repeat}
+  #renoApres{transition:opacity 1.4s ease-in-out}
+  #renoScene img.overlay{position:absolute;aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 4px 3px rgba(0,0,0,.35))}
+  #renoScene img.overlay.nouveau{animation:fondu 1.2s ease-out}
+  @keyframes fondu{from{opacity:0;transform:translate(-50%,-50%) scale(.6)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+  #renoEclat{position:absolute;left:50%;top:45%;font-size:64px;transform:translate(-50%,-50%) scale(0);pointer-events:none}
+  #renoEclat.go{animation:eclat 1s ease-out}
+  @keyframes eclat{0%{transform:translate(-50%,-50%) scale(0);opacity:1}60%{transform:translate(-50%,-50%) scale(1.6);opacity:1}100%{transform:translate(-50%,-50%) scale(2);opacity:0}}
   #renoScene .elt{position:absolute;transform:translate(-50%,-50%);font-size:44px;filter:drop-shadow(0 3px 2px rgba(0,0,0,.4))}
   #renoScene .elt.vide{opacity:.28;filter:grayscale(1)}
   #renoScene .elt.nouveau{animation:apparition .9s ease-out}
@@ -89,12 +97,12 @@
   <button id="btnLogFin">📋 Copier le log</button>
 </div></div>
 
-<div id="version">v0.3.2</div>
+<div id="version">v0.3.3</div>
 <button id="btnNiveaux">☰ Niveaux</button>
 <button id="btnRenover">🔨 Rénover <span id="badgeRenover"></span></button>
 <div id="ecranRenovation" class="ecran">
   <div id="renoTete"><span id="renoTitre">La terrasse</span><span id="renoEtoiles">⭐ 0</span><button id="renoFermer">✕</button></div>
-  <div id="renoScene"><div id="renoBarre"><div id="renoProgres"></div></div></div>
+  <div id="renoScene"><div class="couche" id="renoAvant"></div><div class="couche" id="renoApres"></div><div id="renoOverlays"></div><div id="renoEclat">✨</div><div id="renoBarre"><div id="renoProgres"></div></div></div>
   <div id="renoListe"></div>
   <div id="renoSuivant"></div>
   <div id="renoBulle"></div>
@@ -123,7 +131,7 @@
 /* =====================================================================
  * 1. CONFIGURATION & NIVEAU (données pures, futur fichier JSON)
  * ===================================================================== */
-const VERSION = "v0.3.2";
+const VERSION = "v0.3.3";
 const CONFIG = {
   types: ["🍕","🍔","🍣","🥐","🍩","🥗"], // index = type de pièce
   durees: { swap: 160, rebond: 130, pop: 180, chuteParCase: 70, spawn: 160 }, // ms
@@ -183,9 +191,9 @@ const NIVEAU_DEMO = {
   designNote: "Démo debug v0.3 : nappe 1/2 couches, assiettes 1/2 PV, carton 3 PV, casseroles, glace 1/2, chaînes, plats"
 };
 
-/* --- Données MatchDesign embarquées telles quelles (/workspace/chefmatch/levels.json) --- */
+/* --- Données MatchDesign embarquées telles quelles (/workspace/chefmatch/levels.json, v5 : 1-10 v4 inchangés + 11-20) --- */
 const DATA_NIVEAUX = {
-  "version": 4,
+  "version": 5,
   "gridLegend": {
     ".": "case jouable",
     "#": "case vide"
@@ -525,8 +533,580 @@ const DATA_NIVEAUX = {
         "#......#"
       ],
       "designNote": "Pic difficile (badge rouge), 6 couleurs"
+    },
+    {
+      "id": 11,
+      "moves": 25,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.88,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "nappe",
+          "hp": 1,
+          "zone": [
+            5,
+            2,
+            7,
+            5
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "blocker",
+          "blocker": "nappe",
+          "count": 12
+        }
+      ],
+      "designNote": "Nouveauté nappe 1 couche, en bas"
+    },
+    {
+      "id": 12,
+      "moves": 22,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.85,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "nappe",
+          "hp": 1,
+          "zone": [
+            4,
+            0,
+            4,
+            7
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "blocker",
+          "blocker": "nappe",
+          "count": 8
+        },
+        {
+          "type": "collect",
+          "piece": "tomato",
+          "count": 10
+        }
+      ],
+      "designNote": "Nappe bande centrale + collecte"
+    },
+    {
+      "id": 13,
+      "moves": 26,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.85,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "nappe",
+          "hp": 1,
+          "cells": [
+            [
+              5,
+              0
+            ],
+            [
+              5,
+              7
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              6,
+              7
+            ],
+            [
+              7,
+              0
+            ],
+            [
+              7,
+              7
+            ]
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "blocker",
+          "blocker": "nappe",
+          "count": 6
+        }
+      ],
+      "designNote": "Nappes sur les bords : pousse aux couteaux"
+    },
+    {
+      "id": 14,
+      "moves": 22,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.65,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "nappe",
+          "hp": 2,
+          "zone": [
+            2,
+            1,
+            3,
+            6
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "blocker",
+          "blocker": "nappe",
+          "count": 12
+        }
+      ],
+      "designNote": "Moyen : tapis presque complet, gros nettoyage"
+    },
+    {
+      "id": 15,
+      "moves": 22,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.45,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "nappe",
+          "hp": 2,
+          "zone": [
+            4,
+            1,
+            7,
+            6
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "blocker",
+          "blocker": "nappe",
+          "count": 20
+        }
+      ],
+      "designNote": "Rouge : nappes 2 couches (20 nappes entièrement nettoyées)"
+    },
+    {
+      "id": 16,
+      "moves": 22,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.88,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "assiette",
+          "hp": 1,
+          "cells": [
+            [
+              3,
+              1
+            ],
+            [
+              3,
+              2
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              3,
+              6
+            ],
+            [
+              4,
+              1
+            ],
+            [
+              4,
+              2
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              4,
+              6
+            ]
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "blocker",
+          "blocker": "assiette",
+          "count": 8
+        }
+      ],
+      "designNote": "Nouveauté assiette, 1 PV pour l'intro"
+    },
+    {
+      "id": 17,
+      "moves": 25,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.85,
+      "grid": [
+        "##....##",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "##....##"
+      ],
+      "blockers": [
+        {
+          "type": "assiette",
+          "hp": 2,
+          "cells": [
+            [
+              2,
+              3
+            ],
+            [
+              2,
+              4
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              5,
+              4
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              3,
+              7
+            ],
+            [
+              4,
+              7
+            ]
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "blocker",
+          "blocker": "assiette",
+          "count": 8
+        },
+        {
+          "type": "collect",
+          "piece": "cheese",
+          "count": 8
+        }
+      ],
+      "designNote": "Assiettes 2 PV + collecte"
+    },
+    {
+      "id": 18,
+      "moves": 22,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.82,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "assiette",
+          "hp": 1,
+          "zone": [
+            6,
+            1,
+            6,
+            6
+          ]
+        },
+        {
+          "type": "nappe",
+          "hp": 1,
+          "zone": [
+            0,
+            2,
+            1,
+            5
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "blocker",
+          "blocker": "assiette",
+          "count": 6
+        }
+      ],
+      "designNote": "Rangée d'assiettes en bas"
+    },
+    {
+      "id": 19,
+      "moves": 14,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.65,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "assiette",
+          "hp": 2,
+          "cells": [
+            [
+              3,
+              3
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              4,
+              3
+            ],
+            [
+              4,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "nappe",
+          "hp": 1,
+          "zone": [
+            2,
+            2,
+            5,
+            5
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "blocker",
+          "blocker": "nappe",
+          "count": 12
+        },
+        {
+          "type": "blocker",
+          "blocker": "assiette",
+          "count": 4
+        }
+      ],
+      "designNote": "Moyen : nappe autour d'un îlot d'assiettes"
+    },
+    {
+      "id": 20,
+      "moves": 26,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese",
+        "blueberry"
+      ],
+      "targetWinRate": 0.35,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "nappe",
+          "hp": 1,
+          "zone": [
+            6,
+            1,
+            7,
+            6
+          ]
+        },
+        {
+          "type": "assiette",
+          "hp": 1,
+          "cells": [
+            [
+              2,
+              1
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              3,
+              1
+            ],
+            [
+              3,
+              6
+            ]
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "blocker",
+          "blocker": "nappe",
+          "count": 12
+        },
+        {
+          "type": "blocker",
+          "blocker": "assiette",
+          "count": 4
+        }
+      ],
+      "designNote": "Violet : nappes + assiettes, 6 couleurs ; pic du milieu de la salle (lieu 2)"
     }
-  ]
+  ],
+  "note": "v5 = niveaux 1-10 (v4 validés, inchangés) + 11-20 (MatchDesign, levels_11-20.json). Format : levels_format_v5.md. Sauvegarde v4 : levels_v4.json"
 };
 const NIVEAUX = DATA_NIVEAUX.levels;
 
@@ -743,32 +1323,158 @@ const Economie = {
  *  Lieu 1 : la terrasse de La Petite Marée, 6 tâches (~12 étoiles). Visuels/dialogues PROVISOIRES
  *  (emojis + textes placeholder) en attendant ArtStory : remplacer "image" par assets/<id>.png et les dialogues.
  * ===================================================================== */
-const DATA_RENOVATION = {
-  version: 1,
-  lieux: [
-    { id: "terrasse", nom: "La terrasse", decor: "assets/bg_terrace.jpg",
-      taches: [
-        { id: "sol",        nom: "Nettoyer le sol",        cout: 1, emoji: "🧹", image: "assets/task_sol.png",        pos: [50, 82],
-          dialogue: ["Margot : Ma chérie, on voit enfin les tomettes de Rose !", "Emma : Premier coup de balai, première victoire."] },
-        { id: "rambarde",   nom: "Réparer la rambarde",    cout: 2, emoji: "🪵", image: "assets/task_rambarde.png",   pos: [50, 40],
-          dialogue: ["Emma : Plus personne ne tombera dans le port !", "Victor (au loin) : Profite bien... tant que ça dure."] },
-        { id: "tables",     nom: "Poser les tables",       cout: 2, emoji: "🪑", image: "assets/task_tables.png",     pos: [28, 66],
-          dialogue: ["Margot : Les nappes à carreaux de Rose, comme avant !"] },
-        { id: "chaises",    nom: "Ajouter les chaises",    cout: 2, emoji: "💺", image: "assets/task_chaises.png",    pos: [72, 66],
-          dialogue: ["Emma : Les premiers clients vont pouvoir s'asseoir.", "Margot : Je réserve la meilleure place, hein !"] },
-        { id: "guirlandes", nom: "Accrocher les guirlandes", cout: 3, emoji: "💡", image: "assets/task_guirlandes.png", pos: [50, 18],
-          dialogue: ["Margot : Oh... c'est exactement comme les soirs d'été de Rose.", "Victor : Hmpf. Joli. Mais une guirlande ne paie pas les dettes."] },
-        { id: "enseigne",   nom: "Installer l'enseigne",   cout: 2, emoji: "🪧", image: "assets/task_enseigne.png",   pos: [50, 6],
-          dialogue: ["Emma : « La Petite Marée » est de retour !", "Margot : Rose serait si fière de toi."] }
+/* Données ArtStory embarquées telles quelles (/workspace/chefmatch/renovation_terrace.json) */
+const RENOVATION_TERRASSE = {
+  "location": "terrace",
+  "background_before": "assets/terrace_before.jpg",
+  "background_after": "assets/terrace_after.jpg",
+  "tasks": [
+    {
+      "id": "clean_floor",
+      "cost": 1,
+      "label": "Nettoyer le sol",
+      "dialogue": [
+        {
+          "who": "margot",
+          "text": "Ces dalles n'avaient pas vu un balai depuis le départ de Rose !"
+        },
+        {
+          "who": "emma",
+          "text": "On voit enfin la pierre. Mamie aurait été fière."
+        }
       ],
-      coffre: { or: 500, booster: "bombe", nbBooster: 1 } },
-    { id: "salle", nom: "La salle", verrouille: true, annonce: "Prochainement : la salle du bistrot !", taches: [] }
+      "image": "assets/task_clean_floor.png"
+    },
+    {
+      "id": "fix_railing",
+      "cost": 2,
+      "label": "Réparer la rambarde",
+      "dialogue": [
+        {
+          "who": "leo",
+          "text": "Ta rambarde tenait avec de la ficelle. Je l'ai renforcée avec du bois de bateau."
+        },
+        {
+          "who": "emma",
+          "text": "Merci, Léo... Tu fais ça pour tous les nouveaux voisins ?"
+        },
+        {
+          "who": "leo",
+          "text": "Non."
+        }
+      ],
+      "image": "assets/task_railing.png"
+    },
+    {
+      "id": "place_tables",
+      "cost": 2,
+      "label": "Poser les tables",
+      "dialogue": [
+        {
+          "who": "victor",
+          "text": "Des tables ? Comme c'est touchant. Mon hôtel aura une terrasse dix fois plus grande."
+        },
+        {
+          "who": "emma",
+          "text": "La mienne aura de la vraie cuisine, Victor."
+        }
+      ],
+      "image": "assets/task_tables.png"
+    },
+    {
+      "id": "add_chairs",
+      "cost": 2,
+      "label": "Ajouter les chaises",
+      "dialogue": [
+        {
+          "who": "margot",
+          "text": "Ces chaises viennent du grenier de Rose. Il y avait aussi... une vieille boîte à ton nom."
+        },
+        {
+          "who": "emma",
+          "text": "Une boîte ? Pour moi ?"
+        }
+      ],
+      "image": "assets/task_chairs.png"
+    },
+    {
+      "id": "hang_lights",
+      "cost": 3,
+      "label": "Accrocher les guirlandes",
+      "dialogue": [
+        {
+          "who": "emma",
+          "text": "Waouh... Le port entier les voit briller."
+        },
+        {
+          "who": "leo",
+          "text": "Ça ressemble enfin à La Petite Marée d'avant."
+        }
+      ],
+      "image": "assets/task_garlands.png"
+    },
+    {
+      "id": "install_sign",
+      "cost": 2,
+      "label": "Installer l'enseigne",
+      "dialogue": [
+        {
+          "who": "margot",
+          "text": "« La Petite Marée » est de retour ! Tout le port va en parler !"
+        },
+        {
+          "who": "victor",
+          "text": "Profitez-en, mademoiselle. La banque, elle, n'attend pas."
+        },
+        {
+          "who": "emma",
+          "text": "Alors il est temps de rouvrir la salle."
+        }
+      ],
+      "image": "assets/task_sign.png"
+    }
+  ]
+};
+const PERSONNAGES = { margot: "Margot", emma: "Emma", leo: "Léo", victor: "Victor", rose: "Rose" };
+const EMOJIS_TACHES = { clean_floor: "🧹", fix_railing: "🪵", place_tables: "🪑", add_chairs: "💺", hang_lights: "💡", install_sign: "🪧" };
+/* Placement des overlays 512×512 sur le décor portrait (réglé à l'œil sur terrace_before.jpg) : [x %, y %, largeur %] (centre) */
+const POSITIONS_OVERLAYS = {
+  clean_floor: [50, 90, 96],   // sol : bas, plein cadre
+  fix_railing: [50, 63, 52],    // rambarde : au fond, devant la mer
+  place_tables: [32, 80, 44],   // tables : premier plan gauche
+  add_chairs: [70, 82, 40],     // chaises : premier plan droit
+  hang_lights: [54, 21, 84],    // guirlandes : en haut, entre les façades
+  install_sign: [84, 40, 30]    // enseigne : façade droite, au-dessus du store
+};
+/** Format ArtStory -> format interne. Overlay = champ "image" de chaque tâche (pas de déduction depuis l'id). */
+function lieuDepuisArtStory(d, nom, coffre) {
+  return { id: d.location, nom, avant: d.background_before, apres: d.background_after, coffre,
+    taches: d.tasks.map(t => ({ id: t.id, cout: t.cost, nom: t.label, emoji: EMOJIS_TACHES[t.id] || "🔨",
+      image: t.image || null,                      // overlay ArtStory (champ "image" du JSON) ; absent -> fondu seul
+      pos: POSITIONS_OVERLAYS[t.id] || [50, 50, 40],
+      dialogue: t.dialogue.map(l => typeof l === "string" ? l : (PERSONNAGES[l.who] || l.who) + " : " + l.text) })) };
+}
+const DATA_RENOVATION = {
+  version: 2,
+  lieux: [
+    lieuDepuisArtStory(RENOVATION_TERRASSE, "La terrasse", { or: 500, booster: "bombe", nbBooster: 1 }),
+    { id: "salle", nom: "La salle", verrouille: true, annonce: "Bientôt : la salle du bistrot !",
+      // 1er dialogue : fourni par ArtStory (RENOVATION_TERRASSE.next.dialogue) sinon placeholder
+      dialogue: ((RENOVATION_TERRASSE.next || {}).dialogue || []).map(l => typeof l === "string" ? l : (PERSONNAGES[l.who] || l.who) + " : " + l.text)
+        .concat(((RENOVATION_TERRASSE.next || {}).dialogue || []).length ? [] : ["Emma : La terrasse brille... Prochaine étape : la salle de Mamie Rose. (placeholder)"]),
+      taches: [] }
   ]
 };
 const Renovation = {
   CLE: "chefmatch.renovation",
   lieu() { return DATA_RENOVATION.lieux.find(l => l.id === this.etat().lieu) || DATA_RENOVATION.lieux[0]; },
-  etat() { const s = Store.get(this.CLE, null); return s && Array.isArray(s.faites) ? s : { lieu: "terrasse", faites: [], coffreRecu: false }; },
+  etat() {
+    const s = Store.get(this.CLE, null), L0 = DATA_RENOVATION.lieux[0];
+    if (!s || !Array.isArray(s.faites)) return { lieu: L0.id, faites: [], coffreRecu: false };
+    // migration v0.3.2 (ids provisoires "sol", lieu "terrasse") : on ne garde que les ids connus
+    const lieu = DATA_RENOVATION.lieux.find(l => l.id === s.lieu) || L0;
+    return { ...s, lieu: lieu.id, faites: s.faites.filter(id => lieu.taches.some(t => t.id === id)) };
+  },
   ecrire(s) { Store.set(this.CLE, s); return s; },
   coutTotal(lieu = this.lieu()) { return lieu.taches.reduce((a, t) => a + t.cout, 0); },
   restantes() { const s = this.etat(); return this.lieu().taches.filter(t => !s.faites.includes(t.id)); },
@@ -785,12 +1491,12 @@ const Renovation = {
     if (s.faites.includes(id)) return { ok: false, raison: "deja_faite" };
     if (!Economie.depenserEtoiles(t.cout, "renovation_" + lieu.id + "_" + id)) return { ok: false, raison: "etoiles", manque: t.cout - Economie.etoiles() };
     s.faites.push(id); this.ecrire(s);
-    const res = { ok: true, tache: t, dialogue: t.dialogue.slice(0, 2), fini: false };
+    const res = { ok: true, tache: t, dialogue: t.dialogue.slice(), fini: false, progression: s.faites.length / lieu.taches.length };
     if (this.termine() && !s.coffreRecu) {
       const c = lieu.coffre; Economie.ajouterOr(c.or, "coffre_" + lieu.id); Economie.ajouterBooster(c.booster, c.nbBooster, "coffre_" + lieu.id);
       s.coffreRecu = true; this.ecrire(s);
       const suivant = DATA_RENOVATION.lieux[DATA_RENOVATION.lieux.indexOf(lieu) + 1] || null;
-      Object.assign(res, { fini: true, coffre: c, suivant: suivant && { id: suivant.id, nom: suivant.nom, verrouille: !!suivant.verrouille, annonce: suivant.annonce } });
+      Object.assign(res, { fini: true, coffre: c, suivant: suivant && { id: suivant.id, nom: suivant.nom, verrouille: !!suivant.verrouille, annonce: suivant.annonce, dialogue: suivant.dialogue || [] } });
     }
     return res;
   },
@@ -2205,11 +2911,17 @@ const EcranRenovation = {
     const lieu = Renovation.lieu(), s = Renovation.etat(), et = Economie.etoiles();
     document.getElementById("renoTitre").textContent = "🔨 " + lieu.nom;
     document.getElementById("renoEtoiles").textContent = "⭐ " + et;
-    const scene = document.getElementById("renoScene");
-    scene.querySelectorAll(".elt").forEach(e => e.remove());
-    lieu.taches.forEach(t => { const d = document.createElement("div");
-      d.className = "elt" + (s.faites.includes(t.id) ? "" : " vide") + (t.id === nouveau ? " nouveau" : "");
-      d.style.left = t.pos[0] + "%"; d.style.top = t.pos[1] + "%"; d.textContent = t.emoji; scene.appendChild(d); });
+    // Décor : avant -> après, opacité de « après » = tâches faites / nombre de tâches (fondu animé par CSS)
+    const av = document.getElementById("renoAvant"), ap = document.getElementById("renoApres"), prog = s.faites.length / lieu.taches.length;
+    av.style.backgroundImage = `url("${lieu.avant}")`; ap.style.backgroundImage = `url("${lieu.apres}")`;
+    if (!nouveau) { ap.style.transition = "none"; ap.style.opacity = prog; void ap.offsetWidth; ap.style.transition = ""; }
+    else { ap.style.opacity = prog; const e = document.getElementById("renoEclat"); e.classList.remove("go"); void e.offsetWidth; e.classList.add("go"); }
+    // Overlays optionnels assets/task_<id>.png (si absents : rien, le fondu suffit)
+    const ov = document.getElementById("renoOverlays"); ov.innerHTML = "";
+    lieu.taches.filter(t => s.faites.includes(t.id) && t.image).forEach(t => { const im = document.createElement("img");
+      im.className = "overlay" + (t.id === nouveau ? " nouveau" : ""); im.alt = ""; im.onerror = () => im.remove();
+      im.style.left = t.pos[0] + "%"; im.style.top = t.pos[1] + "%"; im.style.width = t.pos[2] + "%";
+      im.src = t.image; ov.appendChild(im); });
     document.getElementById("renoProgres").style.width = (100 * s.faites.length / lieu.taches.length) + "%";
     const liste = document.getElementById("renoListe"); liste.innerHTML = "";
     lieu.taches.forEach(t => { const b = document.createElement("button"), faite = s.faites.includes(t.id);
@@ -2226,8 +2938,8 @@ const EcranRenovation = {
     this.construire(id);
     const lignes = [...r.dialogue];
     if (r.fini) lignes.push(`🎁 Coffre de la terrasse : +${r.coffre.or} pièces d'or et ${r.coffre.nbBooster} ${POWERUPS[r.coffre.booster] ? POWERUPS[r.coffre.booster].emoji : ""} booster !`,
-      r.suivant ? `✨ Prochain lieu : ${r.suivant.nom}. ${r.suivant.annonce || ""}` : "");
-    setTimeout(() => this.bulles(lignes.filter(Boolean)), 650);   // après l'animation d'apparition
+      r.suivant ? `✨ Prochain lieu : ${r.suivant.nom} (bientôt). ${r.suivant.annonce || ""}` : "", ...(r.suivant ? r.suivant.dialogue : []));
+    setTimeout(() => this.bulles(lignes.filter(Boolean)), 1000);   // après le fondu
   },
   bulles(lignes) {
     const b = document.getElementById("renoBulle"); let i = 0;
@@ -2258,7 +2970,7 @@ if (typeof document !== "undefined" && document.getElementById("jeu")) {
   document.getElementById("renoFermer").onclick = () => EcranRenovation.fermer();
   EcranRenovation.majBadge();
   // ?renovation=1 ouvre l'écran ; ?renovation=demo (debug) : 4 étoiles + 2 tâches faites, pour captures/playtest
-  if (/[?&]renovation=demo/.test(location.search)) { const e = Economie.lire(); e.etoiles = 4; Economie.ecrire(e); Renovation.ecrire({ lieu: "terrasse", faites: ["sol", "rambarde"], coffreRecu: false }); }
+  if (/[?&]renovation=demo/.test(location.search)) { const e = Economie.lire(); e.etoiles = 4; Economie.ecrire(e); Renovation.ecrire({ lieu: DATA_RENOVATION.lieux[0].id, faites: ["clean_floor", "fix_railing"], coffreRecu: false }); }
   if (/[?&]renovation=(1|demo)/.test(location.search)) EcranRenovation.ouvrir();
   const m = /[?&]niveau=(\d+|demo)/.exec(location.search);   // ?niveau=4 (niveau 4) ou ?niveau=demo (démo des bloqueurs)
   const jeu = new Game(document.getElementById("jeu"), !m ? 0 : m[1] === "demo" ? -1 : NIVEAUX.findIndex(n => n.id === +m[1]));
@@ -2273,7 +2985,7 @@ if (typeof document !== "undefined" && document.getElementById("jeu")) {
   DebugUI.init(jeu);
   window.chefMatch = jeu; // accès debug depuis la console
 }
-if (typeof module !== "undefined") module.exports = { Game, ETAT, categorie, Store, Logs, Progres, Board, creerPiece, creerPlat, CONFIG, NIVEAUX, NIVEAU_DEMO, BLOQUEURS, TYPE_PLAT, Economie, CONFIG_ECONOMIE, Visuels, IMAGES_OBSTACLES, Renovation, DATA_RENOVATION, TEXTES, PIECES, TUTOS, BONUS_FIN, txt };
+if (typeof module !== "undefined") module.exports = { Game, ETAT, categorie, Store, Logs, Progres, Board, creerPiece, creerPlat, CONFIG, NIVEAUX, NIVEAU_DEMO, BLOQUEURS, TYPE_PLAT, Economie, CONFIG_ECONOMIE, Visuels, IMAGES_OBSTACLES, Renovation, DATA_RENOVATION, RENOVATION_TERRASSE, TEXTES, PIECES, TUTOS, BONUS_FIN, txt };
 </script>
 </body>
 </html>
