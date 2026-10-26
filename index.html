@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Chef Match – v0.2.2</title>
+<title>Chef Match – v0.2.3</title>
 <style>
   html,body{margin:0;height:100%;background:#3b2418;overflow:hidden;touch-action:none;
     font-family:"Trebuchet MS",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
@@ -64,7 +64,7 @@
   <button id="btnLogFin">📋 Copier le log</button>
 </div></div>
 
-<div id="version">v0.2.2</div>
+<div id="version">v0.2.3</div>
 <button id="btnNiveaux">☰ Niveaux</button>
 <div id="ecranNiveaux" class="ecran"><h1>👨‍🍳 Chef Match</h1><div class="sous">La Petite Marée – choisis un niveau</div><div id="grilleNiveaux"></div></div>
 <div id="intro" class="ecran"><div id="bulle"></div><div id="introAide">Touche pour continuer</div><button id="btnPasser">Passer ⏭</button></div>
@@ -89,11 +89,12 @@
 /* =====================================================================
  * 1. CONFIGURATION & NIVEAU (données pures, futur fichier JSON)
  * ===================================================================== */
-const VERSION = "v0.2.2";
+const VERSION = "v0.2.3";
 const CONFIG = {
   types: ["🍕","🍔","🍣","🥐","🍩","🥗"], // index = type de pièce
   durees: { swap: 160, rebond: 130, pop: 180, chuteParCase: 70, spawn: 160 }, // ms
-  seuilSwipe: 0.3,          // fraction de case pour déclencher un swipe
+  seuilSwipe: 0.3,
+  delaiIndice: 5000,        // ms d'inactivité avant l'indice automatique          // fraction de case pour déclencher un swipe
   couleurs: { fond:"#3b2418", plateau:"#f3d9b1", case1:"#fbe8c8", case2:"#f1d3a5",
               hud:"#fff4e0", texte:"#5a3220", accent:"#e0703a", selection:"#ffb347" }
 };
@@ -870,7 +871,38 @@ class Board {
     }
     return null;
   }
-  aUnCoupPossible() { return this.trouverCoupPossible() !== null; }
+  /** Coup possible : un échange valide, ou à défaut un power-up activable par double-tap. */
+  aUnCoupPossible() {
+    if (this.trouverCoupPossible() !== null) return true;
+    return this.cases().some(({ r, c }) => this.grille[r][c] && this.grille[r][c].special);
+  }
+
+  /**
+   * Meilleur coup pour l'indice (règles MatchDesign) :
+   *   1) activer un power-up (double-tap)   2) créer un power-up (étoile > poêle > couteau > cloche)
+   *   3) matcher une pièce d'objectif      4) n'importe quel coup
+   * Retour : { type, cellules:[{r,c}], a, b, special? } ou null
+   */
+  meilleurCoup(typesObjectifs = []) {
+    const pu = this.cases().find(({ r, c }) => this.grille[r][c] && this.grille[r][c].special);
+    if (pu) return { type: "activation", cellules: [pu], a: pu, b: pu, special: this.grille[pu.r][pu.c].special };
+    const rang = { couleur: 4, bombe: 3, ligneH: 2, ligneV: 2, cloche: 1 };
+    let meilleur = null, score = -1;
+    for (const { r, c } of this.cases()) for (const [dr, dc] of [[0, 1], [1, 0]]) {
+      const a = { r, c }, b = { r: r + dr, c: c + dc };
+      if (!this.jouable(b.r, b.c) || !this.echangeValide(a, b)) continue;
+      this.echanger(a, b);
+      const motifs = this.trouverMatches();
+      const touchObjectif = motifs.some(m => m.cases.some(x => typesObjectifs.includes(this.grille[x.r][x.c].type)));
+      this.echanger(a, b);
+      let sc = 1, type = "simple", sp = null;
+      const best = Math.max(0, ...motifs.map(m => rang[m.special] || 0));
+      if (best) { sc = 100 + best * 10; sp = motifs.map(m => m.special).find(x => rang[x] === best); type = "creation_" + sp; }
+      else if (touchObjectif) { sc = 50; type = "objectif"; }
+      if (sc > score) { score = sc; meilleur = { type, cellules: [a, b], a, b, special: sp }; }
+    }
+    return meilleur;
+  }
 
   /** Mélange en conservant les pièces (specials compris), sans match et avec un coup possible. */
   melanger() {
@@ -982,7 +1014,8 @@ class Renderer {
     g.save(); g.beginPath(); g.rect(this.ox, this.oy, T*b.C, T*b.L); g.clip();
     const dessinerPiece = (p) => {
       const v = j.vue(p); if (v.alpha <= 0) return;
-      this.dessinerPiece(p, this.ox + (v.x + .5)*T, this.oy + (v.y + .5)*T, v.echelle, v.alpha, temps);
+      const pulse = j.indiceAuto && j.indiceAuto.cellules.some(x => j.board.grille[x.r][x.c] === p) ? 1 + 0.09 * Math.sin(temps / 160) : 1;
+      this.dessinerPiece(p, this.ox + (v.x + .5)*T, this.oy + (v.y + .5)*T, v.echelle * pulse, v.alpha, temps);
     };
     for (let r = 0; r < b.L; r++) for (let c = 0; c < b.C; c++) if (b.grille[r][c]) dessinerPiece(b.grille[r][c]);
     j.fantomes.forEach(dessinerPiece);  // pièces en train de disparaître
@@ -1068,6 +1101,7 @@ class Input {
     this.jeu = jeu; this.depart = null;
     const pos = e => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
     canvas.addEventListener("pointerdown", e => {
+      jeu.effacerIndiceAuto();                          // tout appui efface l'indice et relance le délai
       if (jeu.rush) { jeu.rush.passer = true; return; } // tap = passer le Sweet Rush
       if (!jeu.peutJouer()) return;
       canvas.setPointerCapture(e.pointerId);
@@ -1094,6 +1128,12 @@ class Input {
   tap(cs) {
     const j = this.jeu, s = j.selection;
     if (j.debug.placer) { j.debugPoserSpecial(cs, j.debug.placer); return; }
+    // Double-tap sur un power-up : activation sur place (compte comme un coup)
+    const p = j.board.get(cs.r, cs.c), now = performance.now(), d = this.dernierTap;
+    this.dernierTap = { r: cs.r, c: cs.c, t: now };
+    if (p && p.special && d && d.r === cs.r && d.c === cs.c && now - d.t < 400 && !j.tutoCoup) {
+      this.dernierTap = null; j.selection = null; j.activerPowerUp(cs); return;
+    }
     if (!s) { j.selection = cs; return; }
     if (s.r === cs.r && s.c === cs.c) { j.selection = null; return; }
     if (Math.abs(s.r - cs.r) + Math.abs(s.c - cs.c) === 1) { j.selection = null; j.jouerEchange(s, cs); }
@@ -1119,6 +1159,7 @@ class Game {
       const dt = Math.min(50, t - dernier); dernier = t;
       this.animator.update(dt * this.debug.vitesse * (this.rush && this.rush.passer ? 8 : 1)); this.majParticules(dt);
       this.fps = this.fps * 0.9 + (1000 / Math.max(1, dt)) * 0.1;
+      this.verifierIndiceAuto(t);
       this.renderer.dessiner(t);
       requestAnimationFrame(boucle);
     };
@@ -1157,7 +1198,46 @@ class Game {
     if (ms) this._tMsg = setTimeout(() => { if (this.message === m) this.message = null; }, ms);
   }
   peutJouer() { return this.etat === ETAT.IDLE; }
-  changerEtat(e) { this.etat = e; }
+  changerEtat(e) {
+    if (e === ETAT.IDLE && this.etat !== ETAT.IDLE) this.idleDepuis = performance.now();  // relance le délai d'indice
+    if (e !== ETAT.IDLE) this.indiceAuto = null;
+    this.etat = e;
+  }
+
+  /* ---------- Indice automatique après 5 s d'inactivité ---------- */
+  effacerIndiceAuto() { this.indiceAuto = null; this.idleDepuis = performance.now(); }
+  indiceAutorise() {
+    if (this.etat !== ETAT.IDLE || this.tutoCoup || this.rush || this.animator.actif) return false;
+    if (typeof document !== "undefined" && ["overlay", "ecranNiveaux", "intro"].some(id => { const el = document.getElementById(id); return el && el.classList.contains("show"); })) return false;
+    return true;
+  }
+  verifierIndiceAuto(t) {
+    // Hors IDLE « libre » (animations, rush, tuto, écrans) : pas d'indice et le délai repart de zéro
+    if (!this.indiceAutorise()) { this.indiceAuto = null; this.idleDepuis = t; return; }
+    if (this.indiceAuto || t - (this.idleDepuis || t) < CONFIG.delaiIndice) return;
+    const coup = this.board.meilleurCoup(this.objectifs.filter(o => o.restant > 0).map(o => o.type));
+    if (!coup) return;
+    this.indiceAuto = coup;
+    this.log.evenement("hint_shown");
+    Object.assign(this.log.data.evenements[this.log.data.evenements.length - 1], { type: coup.type, cellules: coup.cellules.map(x => [x.r, x.c]) });
+    this.log.sauver();
+  }
+
+  /** Activation d'un power-up par double-tap (sans échange) : compte comme un coup. */
+  async activerPowerUp(cs) {
+    const p = this.board.get(cs.r, cs.c);
+    if (!this.peutJouer() || !p || !p.special) return;
+    this.changerEtat(ETAT.RESOLVING);
+    this.log.coup(cs, cs, p, p);
+    const dernier = this.log.data.coups[this.log.data.coups.length - 1]; dernier.doubleTap = true; dernier.coupPossibleAvant = true;
+    this.log.evenement("double_tap_activation");
+    Object.assign(this.log.data.evenements[this.log.data.evenements.length - 1], { special: p.special, cellule: [cs.r, cs.c] });
+    this.coups--;
+    await this.executerEffacement([cs]);
+    await this.faireTomber();
+    await this.boucleCascades();
+    this.finDeCoup();
+  }
 
   /** Point d'entrée d'un coup joueur. */
   async jouerEchange(a, b) {
