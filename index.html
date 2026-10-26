@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Chef Match – v0.3.1</title>
+<title>Chef Match – v0.3.2</title>
 <style>
   html,body{margin:0;height:100%;background:#3b2418 url("assets/bg_terrace.jpg") center/cover no-repeat;overflow:hidden;touch-action:none;
     font-family:"Trebuchet MS",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
@@ -38,6 +38,31 @@
   #bulle:after{content:"";position:absolute;left:40px;bottom:-18px;border:10px solid transparent;border-top-color:#c8834a}
   #introAide{color:#f1d3a5;margin-top:22px;font-size:13px}
   #btnPasser{position:fixed;right:12px;bottom:12px;border:none;border-radius:12px;padding:10px 16px;background:#e0703a;color:#fff;font-weight:bold;font-family:inherit;cursor:pointer}
+  /* Écran de rénovation (v0.3.2, visuels provisoires) */
+  #btnRenover{position:fixed;left:108px;bottom:8px;z-index:3;border:none;border-radius:12px;padding:8px 12px;background:#7aa35a;color:#fff;font-weight:bold;font-family:inherit;cursor:pointer}
+  #badgeRenover{display:none;position:absolute;top:-8px;right:-8px;min-width:20px;height:20px;border-radius:10px;background:#e2483d;color:#fff;font-size:12px;line-height:20px;text-align:center;border:2px solid #fff;animation:pop .4s ease-out}
+  #badgeRenover.on{display:block}
+  #ecranRenovation{background:#3b2418;z-index:12}
+  #renoTete{display:flex;align-items:center;justify-content:space-between;width:min(94vw,440px);color:#fff4e0;font-weight:bold;font-size:20px;margin:12px 0 8px}
+  #renoEtoiles{background:#fff4e0;color:#5a3220;border-radius:14px;padding:4px 12px}
+  #renoFermer{border:none;background:#c8834a;color:#fff;border-radius:10px;font-size:18px;padding:4px 10px;cursor:pointer}
+  #renoScene{position:relative;width:min(94vw,440px);height:min(52vh,330px);border-radius:18px;border:4px solid #c8834a;overflow:hidden;
+    background:#6b8fb3 url("assets/bg_terrace.jpg") center/cover}
+  #renoScene .elt{position:absolute;transform:translate(-50%,-50%);font-size:44px;filter:drop-shadow(0 3px 2px rgba(0,0,0,.4))}
+  #renoScene .elt.vide{opacity:.28;filter:grayscale(1)}
+  #renoScene .elt.nouveau{animation:apparition .9s ease-out}
+  @keyframes apparition{0%{transform:translate(-50%,-50%) scale(0) rotate(-20deg)}60%{transform:translate(-50%,-50%) scale(1.5)}100%{transform:translate(-50%,-50%) scale(1)}}
+  #renoBarre{position:absolute;left:10px;right:10px;bottom:8px;height:10px;background:rgba(255,244,224,.6);border-radius:5px}
+  #renoProgres{height:100%;width:0;background:#7aa35a;border-radius:5px;transition:width .6s}
+  #renoListe{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(94vw,440px);margin-top:10px}
+  .tache{background:#fff4e0;border:3px solid #c8834a;border-radius:14px;padding:8px;color:#5a3220;font-family:inherit;font-size:14px;text-align:left;cursor:pointer}
+  .tache b{display:block}.tache.faite{background:#dfe9d3;border-color:#7aa35a;cursor:default}
+  .tache.cher{opacity:.6;cursor:not-allowed}.tache.ok{box-shadow:0 0 0 3px #ffd56b}
+  #renoSuivant{color:#f1d3a5;margin:10px 0 4px;font-size:14px;text-align:center;width:min(94vw,440px)}
+  #renoBulle{display:none;position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#fff4e0;border:4px solid #c8834a;border-radius:20px;
+    padding:14px 18px;max-width:320px;color:#5a3220;font-size:16px;z-index:13;cursor:pointer;animation:pop .3s ease-out}
+  #renoBulle.show{display:block}
+  #renoBulle small{display:block;opacity:.6;margin-top:6px;font-size:11px}
   #version{position:fixed;right:6px;bottom:4px;font-size:11px;color:rgba(255,244,224,.55);pointer-events:none}
   /* Panneau debug */
   #debug{position:fixed;top:6px;right:6px;display:none;background:rgba(30,15,8,.92);color:#fff4e0;
@@ -64,8 +89,16 @@
   <button id="btnLogFin">📋 Copier le log</button>
 </div></div>
 
-<div id="version">v0.3.1</div>
+<div id="version">v0.3.2</div>
 <button id="btnNiveaux">☰ Niveaux</button>
+<button id="btnRenover">🔨 Rénover <span id="badgeRenover"></span></button>
+<div id="ecranRenovation" class="ecran">
+  <div id="renoTete"><span id="renoTitre">La terrasse</span><span id="renoEtoiles">⭐ 0</span><button id="renoFermer">✕</button></div>
+  <div id="renoScene"><div id="renoBarre"><div id="renoProgres"></div></div></div>
+  <div id="renoListe"></div>
+  <div id="renoSuivant"></div>
+  <div id="renoBulle"></div>
+</div>
 <div id="ecranNiveaux" class="ecran"><h1>👨‍🍳 Chef Match</h1><div class="sous">La Petite Marée – choisis un niveau</div><div id="grilleNiveaux"></div></div>
 <div id="intro" class="ecran"><div id="bulle"></div><div id="introAide">Touche pour continuer</div><button id="btnPasser">Passer ⏭</button></div>
 <div id="debug"><div class="tete" id="dbgTete"><span>🛠 Debug</span><span id="dbgFleche">▾</span></div>
@@ -81,6 +114,7 @@
   <div class="titre">Niveau :</div>
   <select id="dbgNiveau" style="width:100%;margin:2px 0"></select>
   <button data-a="log">📋 Copier le log</button><button data-a="effacerLogs">🗑 Effacer les logs</button>
+  <button data-a="etoiles">⭐ +3 étoiles</button><button data-a="resetReno">↺ Reset réno</button>
   <button data-a="toutDebloquer">🔓 Tout débloquer</button><button data-a="resetProgres">↺ Reset progression</button>
   <div class="stat" id="dbgInfo"></div>
  </div></div>
@@ -89,7 +123,7 @@
 /* =====================================================================
  * 1. CONFIGURATION & NIVEAU (données pures, futur fichier JSON)
  * ===================================================================== */
-const VERSION = "v0.3.1";
+const VERSION = "v0.3.2";
 const CONFIG = {
   types: ["🍕","🍔","🍣","🥐","🍩","🥗"], // index = type de pièce
   durees: { swap: 160, rebond: 130, pop: 180, chuteParCase: 70, spawn: 160 }, // ms
@@ -547,11 +581,13 @@ const Visuels = {
     if (typeof Image === "undefined") return;           // sous Node : pas de chargement
     const img = src => { const i = new Image(); i.onerror = () => { i.echec = true; }; i.src = src; return i; };
     Object.keys(PIECES).forEach(id => { this.images[id] = img(ASSETS.dossier + id + ".png"); });
+    Object.entries(IMAGES_OBSTACLES).forEach(([type, id]) => { this.images["obs:" + type] = img(ASSETS.dossier + id + ".png"); });
     this.fond = img(ASSETS.dossier + ASSETS.fond);
   },
   /** Image prête à dessiner, ou null (=> emoji). */
   pret(i) { return i && !i.echec && i.complete && i.naturalWidth > 0 ? i : null; },
   piece(id) { return this.pret(this.images[id]); },
+  obstacle(type) { return this.pret(this.images["obs:" + type]); },
   imageFond() { return this.pret(this.fond); }
 };
 
@@ -566,6 +602,8 @@ const BLOQUEURS = {
   glace:     { couche: "dessus", emoji: "🧊", nom: "pièces glacées", hpMax: 2, adjacent: true },
   chaine:    { couche: "dessus", emoji: "⛓️", nom: "chaînes",        hpMax: 1, adjacent: false }
 };
+/* v0.3.2 : PNG ArtStory des obstacles, chargés par id (assets/<id>.png) ; repli emoji si absent */
+const IMAGES_OBSTACLES = { nappe: "tablecloth", assiette: "plate", carton: "crate", casserole: "pot", glace: "ice", chaine: "chain", plat: "dish" };
 const TYPE_PLAT = -2;                       // type de pièce réservé aux plats à livrer (jamais matchable)
 const PLAT = { emoji: "🍝", nom: "plats" };
 const DIRS4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -692,6 +730,69 @@ const Economie = {
     this.journaliser(e, { type: "offre", offre: id, prixOr: o.prixOr, accorde, gratuit, ...contexte });
     this.ecrire(e);
     return { accorde, gratuit, offre: id, prixOr: o.prixOr, ...o };
+  },
+  /** Boosters en stock (coffre de fin de lieu, futures offres). */
+  ajouterBooster(type, n = 1, raison = "") { const e = this.lire(); e.boosters = e.boosters || {}; e.boosters[type] = (e.boosters[type] || 0) + n;
+    this.journaliser(e, { type: "booster", booster: type, n, raison }); this.ecrire(e); return e.boosters[type]; },
+  boosters() { return this.lire().boosters || {}; },
+  reset() { Store.del(this.CLE); }
+};
+
+/* =====================================================================
+ * 1d. RÉNOVATION (méta, spec MatchDesign v1) – logique pure, testable sous Node.
+ *  Lieu 1 : la terrasse de La Petite Marée, 6 tâches (~12 étoiles). Visuels/dialogues PROVISOIRES
+ *  (emojis + textes placeholder) en attendant ArtStory : remplacer "image" par assets/<id>.png et les dialogues.
+ * ===================================================================== */
+const DATA_RENOVATION = {
+  version: 1,
+  lieux: [
+    { id: "terrasse", nom: "La terrasse", decor: "assets/bg_terrace.jpg",
+      taches: [
+        { id: "sol",        nom: "Nettoyer le sol",        cout: 1, emoji: "🧹", image: "assets/task_sol.png",        pos: [50, 82],
+          dialogue: ["Margot : Ma chérie, on voit enfin les tomettes de Rose !", "Emma : Premier coup de balai, première victoire."] },
+        { id: "rambarde",   nom: "Réparer la rambarde",    cout: 2, emoji: "🪵", image: "assets/task_rambarde.png",   pos: [50, 40],
+          dialogue: ["Emma : Plus personne ne tombera dans le port !", "Victor (au loin) : Profite bien... tant que ça dure."] },
+        { id: "tables",     nom: "Poser les tables",       cout: 2, emoji: "🪑", image: "assets/task_tables.png",     pos: [28, 66],
+          dialogue: ["Margot : Les nappes à carreaux de Rose, comme avant !"] },
+        { id: "chaises",    nom: "Ajouter les chaises",    cout: 2, emoji: "💺", image: "assets/task_chaises.png",    pos: [72, 66],
+          dialogue: ["Emma : Les premiers clients vont pouvoir s'asseoir.", "Margot : Je réserve la meilleure place, hein !"] },
+        { id: "guirlandes", nom: "Accrocher les guirlandes", cout: 3, emoji: "💡", image: "assets/task_guirlandes.png", pos: [50, 18],
+          dialogue: ["Margot : Oh... c'est exactement comme les soirs d'été de Rose.", "Victor : Hmpf. Joli. Mais une guirlande ne paie pas les dettes."] },
+        { id: "enseigne",   nom: "Installer l'enseigne",   cout: 2, emoji: "🪧", image: "assets/task_enseigne.png",   pos: [50, 6],
+          dialogue: ["Emma : « La Petite Marée » est de retour !", "Margot : Rose serait si fière de toi."] }
+      ],
+      coffre: { or: 500, booster: "bombe", nbBooster: 1 } },
+    { id: "salle", nom: "La salle", verrouille: true, annonce: "Prochainement : la salle du bistrot !", taches: [] }
+  ]
+};
+const Renovation = {
+  CLE: "chefmatch.renovation",
+  lieu() { return DATA_RENOVATION.lieux.find(l => l.id === this.etat().lieu) || DATA_RENOVATION.lieux[0]; },
+  etat() { const s = Store.get(this.CLE, null); return s && Array.isArray(s.faites) ? s : { lieu: "terrasse", faites: [], coffreRecu: false }; },
+  ecrire(s) { Store.set(this.CLE, s); return s; },
+  coutTotal(lieu = this.lieu()) { return lieu.taches.reduce((a, t) => a + t.cout, 0); },
+  restantes() { const s = this.etat(); return this.lieu().taches.filter(t => !s.faites.includes(t.id)); },
+  /** Tâches faisables maintenant (étoiles suffisantes) – sert au badge du bouton Rénover. */
+  abordables() { const e = Economie.etoiles(); return this.restantes().filter(t => t.cout <= e); },
+  termine() { return this.restantes().length === 0; },
+  /**
+   * Réalise une tâche : dépense les étoiles, sauvegarde, renvoie le dialogue ;
+   * à la dernière tâche, donne le coffre (or + booster) et annonce le lieu suivant.
+   */
+  faire(id) {
+    const s = this.etat(), lieu = this.lieu(), t = lieu.taches.find(x => x.id === id);
+    if (!t) return { ok: false, raison: "inconnue" };
+    if (s.faites.includes(id)) return { ok: false, raison: "deja_faite" };
+    if (!Economie.depenserEtoiles(t.cout, "renovation_" + lieu.id + "_" + id)) return { ok: false, raison: "etoiles", manque: t.cout - Economie.etoiles() };
+    s.faites.push(id); this.ecrire(s);
+    const res = { ok: true, tache: t, dialogue: t.dialogue.slice(0, 2), fini: false };
+    if (this.termine() && !s.coffreRecu) {
+      const c = lieu.coffre; Economie.ajouterOr(c.or, "coffre_" + lieu.id); Economie.ajouterBooster(c.booster, c.nbBooster, "coffre_" + lieu.id);
+      s.coffreRecu = true; this.ecrire(s);
+      const suivant = DATA_RENOVATION.lieux[DATA_RENOVATION.lieux.indexOf(lieu) + 1] || null;
+      Object.assign(res, { fini: true, coffre: c, suivant: suivant && { id: suivant.id, nom: suivant.nom, verrouille: !!suivant.verrouille, annonce: suivant.annonce } });
+    }
+    return res;
   },
   reset() { Store.del(this.CLE); }
 };
@@ -1303,12 +1404,17 @@ class Renderer {
     // Panneau crème semi-opaque sous la grille (validé ChefLead) : lisibilité sur le fond terrasse
     g.fillStyle = "rgba(255,244,224,.82)"; this.rectArrondi(this.ox-8, this.oy-8, T*b.C+16, T*b.L+16, 18); g.fill();
     g.strokeStyle = "rgba(200,131,74,.9)"; g.lineWidth = 3; g.stroke();
+    const badgesNappe = [];
     for (let r = 0; r < b.L; r++) for (let c = 0; c < b.C; c++) {
       if (!b.jouable(r, c)) continue;   // case vide '#' : on voit le panneau
       g.fillStyle = (r + c) % 2 ? K.case2 : K.case1; g.globalAlpha = .75;
       g.fillRect(this.ox + c*T, this.oy + r*T, T, T); g.globalAlpha = 1;
       const n = b.sol[r][c];   // couche « sol » : nappe sale (rouge, plus foncée à 2 couches)
-      if (n) {
+      const imN = n && Visuels.obstacle("nappe");
+      if (imN) {   // nappe sous la pièce : ~60 % d'opacité, 2 couches = plus opaque + badge
+        g.globalAlpha = n.hp > 1 ? .9 : .6; g.drawImage(imN, this.ox + c*T + 1, this.oy + r*T + 1, T - 2, T - 2); g.globalAlpha = 1;
+        if (n.hp > 1) badgesNappe.push([this.ox + c*T, this.oy + r*T, n.hp]);
+      } else if (n) {
         g.fillStyle = n.hp > 1 ? "rgba(178,34,52,.75)" : "rgba(226,86,86,.5)";
         this.rectArrondi(this.ox + c*T + 2, this.oy + r*T + 2, T - 4, T - 4, 6); g.fill();
         g.strokeStyle = "rgba(255,255,255,.55)"; g.lineWidth = 1;
@@ -1341,6 +1447,7 @@ class Renderer {
     j.fantomes.forEach(dessinerPiece);  // pièces en train de disparaître
     g.restore();
     this.dessinerBloqueurs(temps);
+    badgesNappe.forEach(([x, y, hp]) => this.badgePV(x, y, hp, true));
     // Cloches en vol
     j.cloches.forEach(v => {
       g.save(); g.translate(this.ox + (v.x + .5)*T, this.oy + (v.y + .5)*T); g.scale(v.echelle, v.echelle); g.rotate(Math.sin(v.x * 3) * .3);
@@ -1364,23 +1471,33 @@ class Renderer {
       g.restore();
     }
   }
+  /** Petit badge chiffré des PV (affiché seulement si hp > 1). bas=true : coin bas-gauche (nappe). */
+  badgePV(x, y, hp, bas = false) {
+    if (hp < 2) return;
+    const g = this.ctx, T = this.taille, cx = x + (bas ? T*.2 : T*.8), cy = y + (bas ? T*.8 : T*.2);
+    g.fillStyle = bas ? "#b22234" : "#5a3220"; g.beginPath(); g.arc(cx, cy, T*.15, 0, Math.PI*2); g.fill();
+    g.strokeStyle = "#fff"; g.lineWidth = 1.5; g.stroke();
+    g.fillStyle = "#fff"; g.font = `bold ${Math.floor(T*.2)}px Trebuchet MS`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(hp, cx, cy + 1);
+  }
   /** Couches « case » (assiette, carton, casserole) et « dessus » (glace, chaîne) + PV restants. */
   dessinerBloqueurs(temps) {
     const g = this.ctx, b = this.jeu.board, T = this.taille, emo = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
-    const badge = (x, y, hp) => { if (hp < 2) return;
-      g.fillStyle = "#5a3220"; g.beginPath(); g.arc(x + T*.78, y + T*.22, T*.16, 0, Math.PI*2); g.fill();
-      g.fillStyle = "#fff"; g.font = `bold ${Math.floor(T*.22)}px Trebuchet MS`; g.fillText(hp, x + T*.78, y + T*.23); };
+    const badge = (x, y, hp) => { this.badgePV(x, y, hp); g.textAlign = "center"; g.textBaseline = "middle"; };
     g.textAlign = "center"; g.textBaseline = "middle";
     for (let r = 0; r < b.L; r++) for (let c = 0; c < b.C; c++) {
       const x = this.ox + c*T, y = this.oy + r*T, bl = b.bloc[r][c], de = b.dessus[r][c];
-      if (bl) {
+      const imB = bl && Visuels.obstacle(bl.type);
+      if (imB) { g.drawImage(imB, x + 1, y + 1, T - 2, T - 2); badge(x, y, bl.hp); }
+      else if (bl) {
         g.fillStyle = { assiette: "#f7f3ea", carton: "#c9965f", casserole: "#9aa4ad" }[bl.type] || "#ddd";
         this.rectArrondi(x + 3, y + 3, T - 6, T - 6, 9); g.fill();
         g.strokeStyle = "#8a5a3b"; g.lineWidth = 2; g.stroke();
         g.font = `${Math.floor(T*.6)}px ${emo}`; g.fillText(BLOQUEURS[bl.type].emoji, x + T/2, y + T*.54);
         badge(x, y, bl.hp);
       }
-      if (de) {
+      const imD = de && Visuels.obstacle(de.type);
+      if (imD) { g.globalAlpha = de.type === "glace" ? (de.hp > 1 ? .85 : .65) : 1; g.drawImage(imD, x + 1, y + 1, T - 2, T - 2); g.globalAlpha = 1; badge(x, y, de.hp); }
+      else if (de) {
         if (de.type === "glace") {
           g.fillStyle = de.hp > 1 ? "rgba(120,190,255,.62)" : "rgba(170,220,255,.48)";
           this.rectArrondi(x + 3, y + 3, T - 6, T - 6, 9); g.fill();
@@ -1417,6 +1534,7 @@ class Renderer {
     g.font = `${Math.floor(T * (p.special ? .55 : .7))}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
     g.textAlign = "center"; g.textBaseline = "middle";
     const emoji = p.plat ? PLAT.emoji : p.special === "couleur" ? POWERUPS.couleur.emoji : CONFIG.types[p.type];
+    if (p.plat && Visuels.obstacle("plat")) { const s = T * .86; g.drawImage(Visuels.obstacle("plat"), -s/2, -s/2, s, s); g.restore(); return; }
     const img = !p.plat && p.special !== "couleur" && p.type >= 0 ? Visuels.piece(CONFIG.cles[p.type]) : null;
     if (img) { const s = T * (p.special ? .66 : .86); g.drawImage(img, -s/2, -s/2, s, s); }   // PNG 512 réduit
     else g.fillText(emoji, 0, T * .04);                                                       // repli emoji
@@ -1441,7 +1559,8 @@ class Renderer {
       const cx = zoneX + zoneW * (i + .5) / n;
       g.font = '32px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
       const io = o.genre === "collect" ? Visuels.piece(o.cle) : null;
-      if (io) g.drawImage(io, cx - 20, 56, 40, 40); else g.fillText(o.emoji || CONFIG.types[o.type], cx, 76);
+      const io2 = io || (o.genre === "bloqueur" ? Visuels.obstacle(o.cle) : o.genre === "livraison" ? Visuels.obstacle("plat") : null);
+      if (io2) g.drawImage(io2, cx - 20, 56, 40, 40); else g.fillText(o.emoji || CONFIG.types[o.type], cx, 76);
       g.fillStyle = o.restant === 0 ? "#4e9a3a" : K.texte; g.font = "bold 18px Trebuchet MS";
       g.fillText(o.restant === 0 ? "✔" : o.restant, cx, 108); g.fillStyle = K.texte;
     });
@@ -1900,6 +2019,7 @@ class Game {
     if (victoire) this.log.data.coupsRestantsAvantBonus = this.coupsAvantRush;
     if (this.indexNiveau >= 0) Progres.enregistrer(this.indexNiveau, this.niveau.id, victoire, victoire ? this.coupsAvantRush : 0);
     this.etoilesGagnees = victoire && this.indexNiveau >= 0 ? Economie.gagnerEtoilesNiveau(this.niveau.id) : 0;
+    if (typeof document !== "undefined" && document.getElementById("badgeRenover")) EcranRenovation.majBadge();
     UI.afficherFin(victoire, this);
   }
   /** Bouton « +5 coups » */
@@ -2014,6 +2134,8 @@ const DebugUI = {
       else if (a === "ralenti") { jeu.debug.vitesse = jeu.debug.vitesse === 1 ? 0.25 : 1; this.maj(); }
       else if (a === "log") this.copierLog(b);
       else if (a === "effacerLogs") { Logs.effacer(); b.textContent = "✔ Logs effacés"; setTimeout(() => b.textContent = "🗑 Effacer les logs", 1200); }
+      else if (a === "etoiles") { const e = Economie.lire(); e.etoiles += 3; Economie.ecrire(e); EcranRenovation.majBadge(); }
+      else if (a === "resetReno") { Renovation.reset(); EcranRenovation.majBadge(); }
       else if (a === "toutDebloquer") { Progres.toutDebloquer(); Menu.construire(); }
       else if (a === "resetProgres") { Progres.reset(); Menu.construire(); }
     });
@@ -2071,6 +2193,49 @@ const Menu = {
     else Menu.jeu.allerNiveau(i);
   }
 };
+const EcranRenovation = {
+  el: () => document.getElementById("ecranRenovation"),
+  majBadge() {
+    const n = Renovation.abordables().length, b = document.getElementById("badgeRenover");
+    b.textContent = n; b.classList.toggle("on", n > 0);
+  },
+  ouvrir() { UI.cacher(); this.construire(); this.el().classList.add("show"); },
+  fermer() { this.el().classList.remove("show"); document.getElementById("renoBulle").classList.remove("show"); this.majBadge(); },
+  construire(nouveau = null) {
+    const lieu = Renovation.lieu(), s = Renovation.etat(), et = Economie.etoiles();
+    document.getElementById("renoTitre").textContent = "🔨 " + lieu.nom;
+    document.getElementById("renoEtoiles").textContent = "⭐ " + et;
+    const scene = document.getElementById("renoScene");
+    scene.querySelectorAll(".elt").forEach(e => e.remove());
+    lieu.taches.forEach(t => { const d = document.createElement("div");
+      d.className = "elt" + (s.faites.includes(t.id) ? "" : " vide") + (t.id === nouveau ? " nouveau" : "");
+      d.style.left = t.pos[0] + "%"; d.style.top = t.pos[1] + "%"; d.textContent = t.emoji; scene.appendChild(d); });
+    document.getElementById("renoProgres").style.width = (100 * s.faites.length / lieu.taches.length) + "%";
+    const liste = document.getElementById("renoListe"); liste.innerHTML = "";
+    lieu.taches.forEach(t => { const b = document.createElement("button"), faite = s.faites.includes(t.id);
+      b.className = "tache" + (faite ? " faite" : t.cout <= et ? " ok" : " cher");
+      b.innerHTML = `<b>${t.emoji} ${t.nom}</b>${faite ? "✔ Terminé" : "⭐ " + t.cout}`;
+      if (!faite) b.onclick = () => this.choisir(t.id); liste.appendChild(b); });
+    const suiv = DATA_RENOVATION.lieux[DATA_RENOVATION.lieux.indexOf(lieu) + 1];
+    document.getElementById("renoSuivant").textContent = suiv ? (Renovation.termine() ? "🔓 " : "🔒 ") + suiv.nom + " – " + (suiv.annonce || "") : "";
+    this.majBadge();
+  },
+  choisir(id) {
+    const r = Renovation.faire(id);
+    if (!r.ok) { this.bulles([r.raison === "etoiles" ? `Il te manque ${r.manque} étoile(s) : gagne des niveaux !` : "Déjà fait !"]); return; }
+    this.construire(id);
+    const lignes = [...r.dialogue];
+    if (r.fini) lignes.push(`🎁 Coffre de la terrasse : +${r.coffre.or} pièces d'or et ${r.coffre.nbBooster} ${POWERUPS[r.coffre.booster] ? POWERUPS[r.coffre.booster].emoji : ""} booster !`,
+      r.suivant ? `✨ Prochain lieu : ${r.suivant.nom}. ${r.suivant.annonce || ""}` : "");
+    setTimeout(() => this.bulles(lignes.filter(Boolean)), 650);   // après l'animation d'apparition
+  },
+  bulles(lignes) {
+    const b = document.getElementById("renoBulle"); let i = 0;
+    const montrer = () => { b.classList.remove("show"); void b.offsetWidth; b.innerHTML = lignes[i] + "<small>touche pour continuer</small>"; b.classList.add("show"); };
+    b.onclick = () => { i++; if (i < lignes.length) montrer(); else b.classList.remove("show"); };
+    montrer();
+  }
+};
 const Intro = {
   cles: ["intro.1", "intro.2", "intro.3"],
   jouer(suite) {
@@ -2089,6 +2254,12 @@ const Intro = {
  * ===================================================================== */
 if (typeof document !== "undefined" && document.getElementById("jeu")) {
   Visuels.charger();
+  document.getElementById("btnRenover").onclick = () => EcranRenovation.ouvrir();
+  document.getElementById("renoFermer").onclick = () => EcranRenovation.fermer();
+  EcranRenovation.majBadge();
+  // ?renovation=1 ouvre l'écran ; ?renovation=demo (debug) : 4 étoiles + 2 tâches faites, pour captures/playtest
+  if (/[?&]renovation=demo/.test(location.search)) { const e = Economie.lire(); e.etoiles = 4; Economie.ecrire(e); Renovation.ecrire({ lieu: "terrasse", faites: ["sol", "rambarde"], coffreRecu: false }); }
+  if (/[?&]renovation=(1|demo)/.test(location.search)) EcranRenovation.ouvrir();
   const m = /[?&]niveau=(\d+|demo)/.exec(location.search);   // ?niveau=4 (niveau 4) ou ?niveau=demo (démo des bloqueurs)
   const jeu = new Game(document.getElementById("jeu"), !m ? 0 : m[1] === "demo" ? -1 : NIVEAUX.findIndex(n => n.id === +m[1]));
   document.getElementById("btnPlus5").onclick = () => jeu.continuer();
@@ -2102,7 +2273,7 @@ if (typeof document !== "undefined" && document.getElementById("jeu")) {
   DebugUI.init(jeu);
   window.chefMatch = jeu; // accès debug depuis la console
 }
-if (typeof module !== "undefined") module.exports = { Game, ETAT, categorie, Store, Logs, Progres, Board, creerPiece, creerPlat, CONFIG, NIVEAUX, NIVEAU_DEMO, BLOQUEURS, TYPE_PLAT, Economie, CONFIG_ECONOMIE, Visuels, TEXTES, PIECES, TUTOS, BONUS_FIN, txt };
+if (typeof module !== "undefined") module.exports = { Game, ETAT, categorie, Store, Logs, Progres, Board, creerPiece, creerPlat, CONFIG, NIVEAUX, NIVEAU_DEMO, BLOQUEURS, TYPE_PLAT, Economie, CONFIG_ECONOMIE, Visuels, IMAGES_OBSTACLES, Renovation, DATA_RENOVATION, TEXTES, PIECES, TUTOS, BONUS_FIN, txt };
 </script>
 </body>
 </html>
