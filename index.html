@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Chef Match – v0.2.3</title>
+<title>Chef Match – v0.2.4</title>
 <style>
   html,body{margin:0;height:100%;background:#3b2418;overflow:hidden;touch-action:none;
     font-family:"Trebuchet MS",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
@@ -64,7 +64,7 @@
   <button id="btnLogFin">📋 Copier le log</button>
 </div></div>
 
-<div id="version">v0.2.3</div>
+<div id="version">v0.2.4</div>
 <button id="btnNiveaux">☰ Niveaux</button>
 <div id="ecranNiveaux" class="ecran"><h1>👨‍🍳 Chef Match</h1><div class="sous">La Petite Marée – choisis un niveau</div><div id="grilleNiveaux"></div></div>
 <div id="intro" class="ecran"><div id="bulle"></div><div id="introAide">Touche pour continuer</div><button id="btnPasser">Passer ⏭</button></div>
@@ -89,19 +89,20 @@
 /* =====================================================================
  * 1. CONFIGURATION & NIVEAU (données pures, futur fichier JSON)
  * ===================================================================== */
-const VERSION = "v0.2.3";
+const VERSION = "v0.2.4";
 const CONFIG = {
   types: ["🍕","🍔","🍣","🥐","🍩","🥗"], // index = type de pièce
   durees: { swap: 160, rebond: 130, pop: 180, chuteParCase: 70, spawn: 160 }, // ms
   seuilSwipe: 0.3,
-  delaiIndice: 5000,        // ms d'inactivité avant l'indice automatique          // fraction de case pour déclencher un swipe
+  indiceCoupsMax: 3,        // indice seulement si coups restants <= 3
+  delaiIndice: 30000,       // ms d'inactivité avant l'indice automatique (MatchDesign v0.2.4 : 30 s)          // fraction de case pour déclencher un swipe
   couleurs: { fond:"#3b2418", plateau:"#f3d9b1", case1:"#fbe8c8", case2:"#f1d3a5",
               hud:"#fff4e0", texte:"#5a3220", accent:"#e0703a", selection:"#ffb347" }
 };
 
 /* --- Données MatchDesign embarquées telles quelles (/workspace/chefmatch/levels.json) --- */
 const DATA_NIVEAUX = {
-  "version": 2,
+  "version": 3,
   "gridLegend": {
     ".": "case jouable",
     "#": "case vide"
@@ -170,7 +171,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 3,
-      "moves": 16,
+      "moves": 18,
       "colors": [
         "tomato",
         "croissant",
@@ -182,15 +183,15 @@ const DATA_NIVEAUX = {
         {
           "type": "collect",
           "piece": "tomato",
-          "count": 15
+          "count": 12
         },
         {
           "type": "collect",
           "piece": "basil",
-          "count": 15
+          "count": 12
         }
       ],
-      "targetWinRate": 0.8,
+      "targetWinRate": 0.9,
       "grid": [
         "........",
         "........",
@@ -205,7 +206,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 4,
-      "moves": 15,
+      "moves": 17,
       "colors": [
         "tomato",
         "croissant",
@@ -217,10 +218,10 @@ const DATA_NIVEAUX = {
         {
           "type": "collect",
           "piece": "macaron",
-          "count": 20
+          "count": 16
         }
       ],
-      "targetWinRate": 0.75,
+      "targetWinRate": 0.88,
       "grid": [
         "##....##",
         "#......#",
@@ -236,28 +237,27 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 5,
-      "moves": 16,
+      "moves": 18,
       "colors": [
         "tomato",
         "croissant",
         "macaron",
         "basil",
-        "cheese",
-        "blueberry"
+        "cheese"
       ],
       "goals": [
         {
           "type": "collect",
           "piece": "cheese",
-          "count": 16
+          "count": 14
         },
         {
           "type": "collect",
           "piece": "croissant",
-          "count": 16
+          "count": 14
         }
       ],
-      "targetWinRate": 0.65,
+      "targetWinRate": 0.85,
       "grid": [
         "........",
         "........",
@@ -279,17 +279,16 @@ const DATA_NIVEAUX = {
         "croissant",
         "macaron",
         "basil",
-        "cheese",
-        "blueberry"
+        "cheese"
       ],
       "goals": [
         {
           "type": "collect",
           "piece": "basil",
-          "count": 28
+          "count": 24
         }
       ],
-      "targetWinRate": 0.6,
+      "targetWinRate": 0.7,
       "grid": [
         "........",
         "........",
@@ -301,37 +300,36 @@ const DATA_NIVEAUX = {
         "........"
       ],
       "tutorial": "star",
-      "designNote": "Étoile forcée : efface tous les basilics"
+      "designNote": "Étoile forcée ; premier presque-gagné léger"
     },
     {
       "id": 7,
-      "moves": 17,
+      "moves": 18,
       "colors": [
         "tomato",
         "croissant",
         "macaron",
         "basil",
-        "cheese",
-        "blueberry"
+        "cheese"
       ],
       "goals": [
         {
           "type": "collect",
           "piece": "tomato",
-          "count": 16
+          "count": 14
         },
         {
           "type": "collect",
           "piece": "macaron",
-          "count": 16
+          "count": 14
         },
         {
           "type": "collect",
           "piece": "cheese",
-          "count": 12
+          "count": 10
         }
       ],
-      "targetWinRate": 0.55,
+      "targetWinRate": 0.82,
       "grid": [
         "........",
         "........",
@@ -346,7 +344,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 8,
-      "moves": 17,
+      "moves": 20,
       "colors": [
         "tomato",
         "croissant",
@@ -358,10 +356,10 @@ const DATA_NIVEAUX = {
         {
           "type": "collect",
           "piece": "croissant",
-          "count": 35
+          "count": 28
         }
       ],
-      "targetWinRate": 0.6,
+      "targetWinRate": 0.85,
       "grid": [
         "........",
         "........",
@@ -377,27 +375,26 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 9,
-      "moves": 20,
+      "moves": 22,
       "colors": [
         "tomato",
         "croissant",
         "macaron",
-        "basil",
-        "cheese"
+        "basil"
       ],
       "goals": [
         {
           "type": "collect",
           "piece": "basil",
-          "count": 20
+          "count": 18
         },
         {
           "type": "collect",
           "piece": "tomato",
-          "count": 20
+          "count": 18
         }
       ],
-      "targetWinRate": 0.75,
+      "targetWinRate": 0.92,
       "grid": [
         "........",
         "........",
@@ -425,15 +422,15 @@ const DATA_NIVEAUX = {
         {
           "type": "collect",
           "piece": "macaron",
-          "count": 28
+          "count": 24
         },
         {
           "type": "collect",
           "piece": "blueberry",
-          "count": 28
+          "count": 24
         }
       ],
-      "targetWinRate": 0.4,
+      "targetWinRate": 0.5,
       "grid": [
         "#......#",
         "........",
@@ -878,6 +875,20 @@ class Board {
   }
 
   /**
+   * Nombre de coups distincts (échanges valides + activations de power-up par double-tap).
+   * @param max arrêt anticipé dès que max est atteint
+   */
+  compterCoups(max = Infinity) {
+    let n = 0;
+    for (const { r, c } of this.cases()) {
+      if (this.grille[r][c] && this.grille[r][c].special && ++n >= max) return n;   // activation
+      for (const [dr, dc] of [[0, 1], [1, 0]])
+        if (this.jouable(r + dr, c + dc) && this.echangeValide({ r, c }, { r: r + dr, c: c + dc }) && ++n >= max) return n;
+    }
+    return n;
+  }
+
+  /**
    * Meilleur coup pour l'indice (règles MatchDesign) :
    *   1) activer un power-up (double-tap)   2) créer un power-up (étoile > poêle > couteau > cloche)
    *   3) matcher une pièce d'objectif      4) n'importe quel coup
@@ -1205,7 +1216,7 @@ class Game {
   }
 
   /* ---------- Indice automatique après 5 s d'inactivité ---------- */
-  effacerIndiceAuto() { this.indiceAuto = null; this.idleDepuis = performance.now(); }
+  effacerIndiceAuto() { this.indiceAuto = null; this.idleDepuis = performance.now(); this.indiceEvalue = false; }
   indiceAutorise() {
     if (this.etat !== ETAT.IDLE || this.tutoCoup || this.rush || this.animator.actif) return false;
     if (typeof document !== "undefined" && ["overlay", "ecranNiveaux", "intro"].some(id => { const el = document.getElementById(id); return el && el.classList.contains("show"); })) return false;
@@ -1213,8 +1224,10 @@ class Game {
   }
   verifierIndiceAuto(t) {
     // Hors IDLE « libre » (animations, rush, tuto, écrans) : pas d'indice et le délai repart de zéro
-    if (!this.indiceAutorise()) { this.indiceAuto = null; this.idleDepuis = t; return; }
-    if (this.indiceAuto || t - (this.idleDepuis || t) < CONFIG.delaiIndice) return;
+    if (!this.indiceAutorise()) { this.indiceAuto = null; this.idleDepuis = t; this.indiceEvalue = false; return; }
+    if (this.indiceAuto || this.indiceEvalue || t - (this.idleDepuis || t) < CONFIG.delaiIndice) return;
+    // Règle v0.2.4 : indice UNIQUEMENT quand il reste <= 3 coups (compteur), après 30 s d'inactivité
+    if (this.coups > CONFIG.indiceCoupsMax) return;
     const coup = this.board.meilleurCoup(this.objectifs.filter(o => o.restant > 0).map(o => o.type));
     if (!coup) return;
     this.indiceAuto = coup;
