@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Chef Match – v0.3.4</title>
+<title>Chef Match – v0.4-dev</title>
 <style>
   html,body{margin:0;height:100%;background:#3b2418 url("assets/bg_terrace.jpg") center/cover no-repeat;overflow:hidden;touch-action:none;
     font-family:"Trebuchet MS",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
@@ -70,7 +70,41 @@
   #renoBulle{display:none;position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#fff4e0;border:4px solid #c8834a;border-radius:20px;
     padding:14px 18px;max-width:320px;color:#5a3220;font-size:16px;z-index:13;cursor:pointer;animation:pop .3s ease-out}
   #renoBulle.show{display:block}
+  #renoBulle{z-index:6}
+  #renoFinale{display:none;position:fixed;inset:0;z-index:5;background:radial-gradient(circle at 50% 40%,rgba(255,226,170,.35),rgba(30,15,8,.88));align-items:flex-start;justify-content:center}
+  #renoFinale.show{display:flex;animation:pop .6s ease-out}
+  #renoFinale h2{margin-top:22vh;color:#ffe2a8;font-size:28px;text-shadow:0 2px 8px #000}
   #renoBulle small{display:block;opacity:.6;margin-top:6px;font-size:11px}
+  /* v0.4-dev : solde, boutique, pré-niveau */
+  .solde{position:relative;display:inline-block;background:#fff4e0;color:#5a3220;border-radius:14px;padding:4px 12px;font-weight:bold;font-size:16px;white-space:nowrap}
+  .solde b{display:inline-block;min-width:22px}
+  .solde.pulse{animation:pop .5s ease-out}
+  .solde .gain{position:absolute;left:50%;top:-4px;transform:translateX(-50%);color:#e0703a;font-size:15px;font-weight:bold;pointer-events:none;animation:gainVol 1.4s ease-out forwards;text-shadow:0 1px 0 #fff}
+  @keyframes gainVol{0%{opacity:0;transform:translate(-50%,6px) scale(.6)}20%{opacity:1;transform:translate(-50%,-6px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-38px) scale(1)}}
+  #soldeFin{margin:4px 0 2px}
+  .barreCarte{display:flex;gap:10px;align-items:center;margin:2px 0 4px}
+  .btnAlt{border:none;border-radius:12px;padding:6px 12px;background:#7aa35a;color:#fff;font-weight:bold;font-family:inherit;cursor:pointer;font-size:14px}
+  .teteEcran{display:flex;align-items:center;justify-content:space-between;gap:8px;width:min(94vw,440px);color:#fff4e0;font-size:22px;margin:16px 0 10px}
+  .teteEcran .fermer{border:none;background:#c8834a;color:#fff;border-radius:10px;font-size:18px;padding:4px 10px;cursor:pointer}
+  .titreSec{color:#f1d3a5;width:min(94vw,440px);margin:10px 0 6px;font-weight:bold}
+  .grilleArticles{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(94vw,440px)}
+  .article{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff4e0;border:3px solid #c8834a;border-radius:16px;padding:10px 6px;color:#5a3220;font-family:inherit;cursor:pointer}
+  .article .ico{font-size:34px}.article small{opacity:.75}
+  .article .prix{margin-top:4px;background:#e0703a;color:#fff;border-radius:10px;padding:3px 10px;font-weight:bold}
+  .article.pack .prix{background:#9a8f86}
+  #boutiqueMsg{color:#fff4e0;margin:12px;min-height:22px;font-weight:bold;text-align:center}
+  #boutiqueMsg.pop{animation:pop .35s ease-out}
+  #ecranBoutique,#ecranPreNiveau{z-index:13}
+  #preObjectifs{background:#fff4e0;color:#5a3220;border-radius:14px;padding:10px 14px;font-size:18px;width:min(88vw,400px);text-align:center}
+  #preBoosters{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:min(94vw,440px)}
+  .boost{position:relative;display:flex;flex-direction:column;align-items:center;background:#fff4e0;border:3px solid #c8834a;border-radius:16px;padding:8px 2px;color:#5a3220;font-family:inherit;cursor:pointer}
+  .boost .ico{font-size:30px}.boost small{font-size:10px}
+  .boost .nb{position:absolute;top:-8px;right:-6px;background:#5a3220;color:#fff;border-radius:10px;min-width:20px;font-size:12px;padding:1px 4px;border:2px solid #fff}
+  .boost.on{border-color:#7aa35a;background:#dfe9d3;box-shadow:0 0 0 3px #ffd56b}
+  .boost.vide{opacity:.55}.boost.vide .nb{background:#7aa35a}.boost.vide .nb:after{content:" +"}
+  #preJouer{margin-top:16px;border:none;border-radius:16px;padding:14px 46px;font-size:22px;font-weight:bold;background:#e0703a;color:#fff;box-shadow:0 4px 0 #a64a20;font-family:inherit;cursor:pointer}
+  .ligneBtns{display:flex;gap:10px;margin-top:12px}
+  #renoSuivant .btnAlt{display:block;margin:8px auto 0}
   #version{position:fixed;right:6px;bottom:4px;font-size:11px;color:rgba(255,244,224,.55);pointer-events:none}
   /* Panneau debug */
   #debug{position:fixed;top:6px;right:6px;display:none;background:rgba(30,15,8,.92);color:#fff4e0;
@@ -89,7 +123,7 @@
 <body>
 <canvas id="jeu"></canvas>
 <div id="overlay"><div id="panel">
-  <h1 id="titreFin"></h1><p id="texteFin"></p>
+  <h1 id="titreFin"></h1><div class="solde" id="soldeFin"></div><p id="texteFin"></p>
   <button id="btnSuivant">Continuer</button>
   <button id="btnPlus5">+5 coups</button>
   <button id="btnRejouer" class="alt">Rejouer</button>
@@ -97,17 +131,25 @@
   <button id="btnLogFin">📋 Copier le log</button>
 </div></div>
 
-<div id="version">v0.3.4</div>
+<div id="version">v0.4-dev</div>
 <button id="btnNiveaux">☰ Niveaux</button>
 <button id="btnRenover">🔨 Rénover <span id="badgeRenover"></span></button>
 <div id="ecranRenovation" class="ecran">
-  <div id="renoTete"><span id="renoTitre">La terrasse</span><span id="renoEtoiles">⭐ 0</span><button id="renoFermer">✕</button></div>
+  <div id="renoTete"><span id="renoTitre">La terrasse</span><span id="renoEtoiles" class="solde"></span><button id="renoFermer">✕</button></div>
   <div id="renoScene"><div class="couche" id="renoAvant"></div><div class="couche" id="renoApres"></div><div id="renoOverlays"></div><div id="renoEclat">✨</div><div id="renoBarre"><div id="renoProgres"></div></div></div>
   <div id="renoListe"></div>
   <div id="renoSuivant"></div>
+  <div id="renoFinale"><h2></h2></div>
   <div id="renoBulle"></div>
 </div>
-<div id="ecranNiveaux" class="ecran"><h1>👨‍🍳 Chef Match</h1><div class="sous">La Petite Marée – choisis un niveau</div><div id="grilleNiveaux"></div></div>
+<div id="ecranNiveaux" class="ecran"><h1>👨‍🍳 Chef Match</h1><div class="barreCarte"><span class="solde"></span><button class="btnAlt" id="btnBoutique">🛒 Boutique</button></div><div class="sous">La Petite Marée – choisis un niveau</div><div id="grilleNiveaux"></div></div>
+<div id="ecranBoutique" class="ecran"><div class="teteEcran"><b>🛒 Boutique</b><span class="solde"></span><button class="fermer" id="boutiqueFermer">✕</button></div>
+  <div class="titreSec">Boosters (payés en or)</div><div class="grilleArticles" id="boutiqueBoosters"></div>
+  <div class="titreSec">Pièces d'or <small>(achats réels : bientôt)</small></div><div class="grilleArticles" id="boutiquePacks"></div>
+  <div id="boutiqueMsg"></div></div>
+<div id="ecranPreNiveau" class="ecran"><div class="teteEcran"><b id="preTitre">Niveau</b><span class="solde"></span></div>
+  <div id="preObjectifs"></div><div class="titreSec">Choisis tes boosters de départ</div><div id="preBoosters"></div>
+  <button id="preJouer">Jouer ▶</button><div class="ligneBtns"><button class="btnAlt" id="preBoutique">🛒 Boutique</button><button class="btnAlt" id="preRetour">← Niveaux</button></div></div>
 <div id="intro" class="ecran"><div id="bulle"></div><div id="introAide">Touche pour continuer</div><button id="btnPasser">Passer ⏭</button></div>
 <div id="debug"><div class="tete" id="dbgTete"><span>🛠 Debug</span><span id="dbgFleche">▾</span></div>
  <div class="corps">
@@ -131,7 +173,7 @@
 /* =====================================================================
  * 1. CONFIGURATION & NIVEAU (données pures, futur fichier JSON)
  * ===================================================================== */
-const VERSION = "v0.3.4";
+const VERSION = "v0.4-dev";
 const CONFIG = {
   types: ["🍕","🍔","🍣","🥐","🍩","🥗"], // index = type de pièce
   durees: { swap: 160, rebond: 130, pop: 180, chuteParCase: 70, spawn: 160 }, // ms
@@ -1037,7 +1079,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 20,
-      "moves": 24,
+      "moves": 21,
       "colors": [
         "tomato",
         "croissant",
@@ -1061,11 +1103,69 @@ const DATA_NIVEAUX = {
         {
           "type": "nappe",
           "hp": 1,
-          "zone": [
-            6,
-            1,
-            7,
-            6
+          "cells": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              6
+            ],
+            [
+              0,
+              7
+            ],
+            [
+              1,
+              7
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              7,
+              0
+            ],
+            [
+              7,
+              1
+            ],
+            [
+              6,
+              7
+            ],
+            [
+              7,
+              6
+            ],
+            [
+              7,
+              7
+            ]
+          ]
+        },
+        {
+          "type": "assiette",
+          "hp": 2,
+          "cells": [
+            [
+              2,
+              2
+            ],
+            [
+              2,
+              5
+            ]
           ]
         },
         {
@@ -1073,20 +1173,12 @@ const DATA_NIVEAUX = {
           "hp": 1,
           "cells": [
             [
-              2,
-              1
+              5,
+              2
             ],
             [
-              2,
-              6
-            ],
-            [
-              3,
-              1
-            ],
-            [
-              3,
-              6
+              5,
+              5
             ]
           ]
         }
@@ -1095,20 +1187,817 @@ const DATA_NIVEAUX = {
         {
           "type": "blocker",
           "blocker": "nappe",
-          "count": 12
+          "count": 10
         },
         {
           "type": "blocker",
           "blocker": "assiette",
           "count": 4
+        },
+        {
+          "type": "collect",
+          "piece": "blueberry",
+          "count": 10
         }
       ],
-      "designNote": "Violet : nappes + assiettes, 6 couleurs ; pic du milieu de la salle (lieu 2)"
+      "designNote": "Violet refondu : 4 îlots de nappes en L aux 4 coins, 4 assiettes dont 2 à 2 PV, collecte de myrtilles, 6 couleurs"
+    },
+    {
+      "id": 21,
+      "moves": 17,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.88,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "plat",
+          "cells": [
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              1
+            ],
+            [
+              3,
+              2
+            ],
+            [
+              4,
+              3
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              3,
+              6
+            ],
+            [
+              4,
+              7
+            ]
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "deliver",
+          "count": 1
+        }
+      ],
+      "designNote": "Tuto livraison : livrer 1 plat sur 8 posés en rangées 3-4"
+    },
+    {
+      "id": 22,
+      "moves": 18,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.85,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "plat",
+          "cells": [
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              1
+            ],
+            [
+              3,
+              2
+            ],
+            [
+              4,
+              3
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              3,
+              6
+            ],
+            [
+              4,
+              7
+            ]
+          ]
+        },
+        {
+          "type": "nappe",
+          "hp": 1,
+          "zone": [
+            2,
+            2,
+            2,
+            5
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "deliver",
+          "count": 1
+        },
+        {
+          "type": "blocker",
+          "blocker": "nappe",
+          "count": 4
+        }
+      ],
+      "designNote": "Livraison (1 sur 8) + 4 nappes en rangée 2"
+    },
+    {
+      "id": 23,
+      "moves": 20,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.7,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "plat",
+          "cells": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              0,
+              5
+            ],
+            [
+              1,
+              7
+            ]
+          ]
+        },
+        {
+          "type": "assiette",
+          "hp": 1,
+          "cells": [
+            [
+              3,
+              3
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              5,
+              6
+            ]
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "deliver",
+          "count": 1
+        },
+        {
+          "type": "blocker",
+          "blocker": "assiette",
+          "count": 4
+        },
+        {
+          "type": "collect",
+          "piece": "cheese",
+          "count": 12
+        }
+      ],
+      "designNote": "Moyen : livraison + assiettes + collecte (plats hors colonnes à assiette)"
+    },
+    {
+      "id": 24,
+      "moves": 24,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.65,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "plat",
+          "cells": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              0,
+              7
+            ]
+          ]
+        },
+        {
+          "type": "nappe",
+          "hp": 1,
+          "zone": [
+            5,
+            2,
+            6,
+            5
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "deliver",
+          "count": 1
+        },
+        {
+          "type": "blocker",
+          "blocker": "nappe",
+          "count": 8
+        }
+      ],
+      "designNote": "Moyen : livraison + nappes"
+    },
+    {
+      "id": 25,
+      "moves": 22,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.45,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "plat",
+          "cells": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              1
+            ],
+            [
+              0,
+              2
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              0,
+              6
+            ],
+            [
+              1,
+              7
+            ]
+          ]
+        },
+        {
+          "type": "glace",
+          "hp": 1,
+          "cells": [
+            [
+              5,
+              1
+            ],
+            [
+              5,
+              2
+            ],
+            [
+              5,
+              5
+            ],
+            [
+              5,
+              6
+            ]
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "deliver",
+          "count": 3
+        }
+      ],
+      "designNote": "Rouge : livrer 3 plats sur 8, glace en rangée 5 qui freine les colonnes 1, 2, 5, 6"
+    },
+    {
+      "id": 26,
+      "moves": 18,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.88,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "glace",
+          "hp": 1,
+          "zone": [
+            3,
+            1,
+            5,
+            6
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "blocker",
+          "blocker": "glace",
+          "count": 18
+        }
+      ],
+      "designNote": "Tuto glace : libérer 18 pièces"
+    },
+    {
+      "id": 27,
+      "moves": 21,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.85,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "glace",
+          "hp": 1,
+          "cells": [
+            [
+              2,
+              2
+            ],
+            [
+              2,
+              5
+            ],
+            [
+              3,
+              2
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              4,
+              2
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              5,
+              2
+            ],
+            [
+              5,
+              5
+            ]
+          ]
+        },
+        {
+          "type": "plat",
+          "cells": [
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              1
+            ],
+            [
+              4,
+              3
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              4,
+              6
+            ],
+            [
+              3,
+              7
+            ]
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "blocker",
+          "blocker": "glace",
+          "count": 8
+        },
+        {
+          "type": "deliver",
+          "count": 1
+        }
+      ],
+      "designNote": "Glace + livraison (1 plat sur 6, hors colonnes de glace)"
+    },
+    {
+      "id": 28,
+      "moves": 24,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.7,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "glace",
+          "hp": 1,
+          "zone": [
+            2,
+            1,
+            3,
+            6
+          ]
+        },
+        {
+          "type": "nappe",
+          "hp": 1,
+          "zone": [
+            7,
+            0,
+            7,
+            7
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "blocker",
+          "blocker": "glace",
+          "count": 12
+        },
+        {
+          "type": "blocker",
+          "blocker": "nappe",
+          "count": 8
+        }
+      ],
+      "designNote": "Moyen : 12 glaces + nappes"
+    },
+    {
+      "id": 29,
+      "moves": 21,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese"
+      ],
+      "targetWinRate": 0.85,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "glace",
+          "hp": 1,
+          "zone": [
+            4,
+            0,
+            5,
+            7
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "blocker",
+          "blocker": "glace",
+          "count": 16
+        },
+        {
+          "type": "collect",
+          "piece": "macaron",
+          "count": 14
+        }
+      ],
+      "designNote": "Facile avant le boss : glace + collecte"
+    },
+    {
+      "id": 30,
+      "moves": 25,
+      "colors": [
+        "tomato",
+        "croissant",
+        "macaron",
+        "basil",
+        "cheese",
+        "blueberry"
+      ],
+      "targetWinRate": 0.4,
+      "grid": [
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........"
+      ],
+      "blockers": [
+        {
+          "type": "plat",
+          "cells": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              0,
+              6
+            ]
+          ]
+        },
+        {
+          "type": "glace",
+          "hp": 1,
+          "cells": [
+            [
+              3,
+              0
+            ],
+            [
+              3,
+              7
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              4,
+              7
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              2,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "nappe",
+          "hp": 1,
+          "zone": [
+            6,
+            2,
+            7,
+            5
+          ]
+        }
+      ],
+      "goals": [
+        {
+          "type": "deliver",
+          "count": 1
+        },
+        {
+          "type": "blocker",
+          "blocker": "glace",
+          "count": 6
+        },
+        {
+          "type": "blocker",
+          "blocker": "nappe",
+          "count": 8
+        }
+      ],
+      "designNote": "Violet fin de chapitre 1 : 3 objectifs (livraison, glace, nappes), 6 couleurs"
     }
   ],
-  "note": "v5 = niveaux 1-10 (v4 validés, inchangés) + 11-20 (MatchDesign, levels_11-20.json). Format : levels_format_v5.md. Sauvegarde v4 : levels_v4.json"
+  "note": "v0.4 = 1-19 (v5b inchangés) + 20 refait (levels_20_redesign.json) + 21-30 (levels_21-30.json). Sauvegarde v5 : levels_v5b.json. Recalibrage 21-25, 27, 30 : MatchDesign. | v0.4b : 21-25, 27, 30 remplacés par levels_21-30_v2.json (MatchDesign) ; sauvegarde avant : levels_v6a.json. | v0.4c : 21,22,23,25,27 = levels_21-30_v3.json ; sauvegarde avant : levels_v6b.json."
 };
 const NIVEAUX = DATA_NIVEAUX.levels;
+/* v0.4-dev : validation des niveaux au chargement — copie de tools/validate_levels.js (source unique, injectée par patch_v04dev_d.py) */
+/*<validation>*/
+const COUCHES_BLOQUEURS_VALIDATION = { nappe: "sol", assiette: "case", carton: "case", casserole: "case", glace: "dessus", chaine: "dessus" };
+function cellulesValidation(b) {
+  const l = [];
+  if (Number.isInteger(b.r) && Number.isInteger(b.c)) l.push([b.r, b.c]);
+  (b.cells || []).forEach(x => l.push([x[0], x[1]]));
+  if (b.zone) { const [r0, c0, r1, c1] = b.zone; for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) l.push([r, c]); }
+  return l;
+}
+/** Valide un niveau v5. Renvoie { id, ok, erreurs: [{code, plat:[r,c], message}], avertissements: [...] }. */
+function validerNiveau(N) {
+  const grid = N.grid || Array.from({ length: 8 }, () => "........"), L = grid.length, C = grid[0].length;
+  const jouable = (r, c) => r >= 0 && r < L && c >= 0 && c < C && grid[r][c] !== "#";
+  const couche = {};   // "r,c" -> { case: type, dessus: type }
+  const plats = [];
+  for (const b of N.blockers || []) for (const [r, c] of cellulesValidation(b)) {
+    if (b.type === "plat") { plats.push([r, c]); continue; }
+    const k = COUCHES_BLOQUEURS_VALIDATION[b.type]; if (!k || !jouable(r, c)) continue;
+    (couche[r + "," + c] = couche[r + "," + c] || {})[k] = b.type;
+  }
+  const erreurs = [], avertissements = [], id = N.id ?? "?";
+  const err = (code, rc, m) => erreurs.push({ code, plat: rc, message: `Niveau ${id}, plat [${rc}] : ${m}` });
+  for (const [r, c] of plats) {
+    if (!jouable(r, c)) { err("PLAT_HORS_JEU", [r, c], "hors grille ou sur une case vide '#'"); continue; }
+    const ici = couche[r + "," + c] || {};
+    if (ici.case) err("PLAT_SUR_BLOQUEUR", [r, c], `posé sur une case occupée par un bloqueur (${ici.case}) : le moteur le supprime`);
+    let dessous = 0, premier = null;
+    for (let y = r + 1; y < L; y++) if (jouable(y, c)) { dessous++; if (premier === null) premier = y; }
+    const rang = dessous + 1;
+    if (rang <= 2) err("PLAT_TROP_BAS", [r, c], `démarre à la ${rang === 1 ? "1re" : "2e"} case jouable depuis le bas de la colonne ${c} (minimum : 3e) : aucun match vertical ne peut le faire descendre`);
+    if (premier !== null && (couche[premier + "," + c] || {}).case === "assiette") err("PLAT_SUR_ASSIETTE", [r, c], `directement au-dessus d'une assiette (case [${premier},${c}])`);
+    if (ici.dessus && !ici.case) avertissements.push({ code: "PLAT_SOUS_GLACE", plat: [r, c], message: `Niveau ${id}, plat [${r},${c}] : sur une case ${ici.dessus} (retiré par le moteur)` });
+  }
+  return { id, ok: erreurs.length === 0, erreurs, avertissements };
+}
+/*</validation>*/
+const VALIDATION_NIVEAUX = NIVEAUX.map(validerNiveau);
+/** Niveaux rejetés : marqués non jouables (N.invalide = erreurs), erreur claire en console + journal persistant. */
+VALIDATION_NIVEAUX.forEach((v, i) => {
+  if (v.ok) return;
+  NIVEAUX[i].invalide = v.erreurs;
+  if (typeof console !== "undefined") v.erreurs.forEach(e => console.error("[Niveaux] REJETÉ " + e.code + " – " + e.message));
+});
+function journaliserNiveauxInvalides() {
+  const ko = VALIDATION_NIVEAUX.filter(v => !v.ok); if (!ko.length) return;
+  Store.set("chefmatch.niveauxRejetes", { t: new Date().toISOString(), version: VERSION, niveaux: ko.map(v => ({ id: v.id, erreurs: v.erreurs.map(e => e.code + " " + JSON.stringify(e.plat)) })) });
+}
 
 /* --- Textes FR embarqués (/workspace/chefmatch/texts_fr.json) --- */
 const TEXTES = {
@@ -1268,14 +2157,37 @@ const Logs = {
  *  (modeTest) et journalise l'événement, pour mesurer l'usage pendant les playtests.
  * ===================================================================== */
 const CONFIG_ECONOMIE = {
-  modeTest: true,                     // true = offres gratuites (pas de boutique / paiement branché)
-  orDepart: 0,
-  etoilesParVictoire: 1,              // spec MatchDesign : 1 étoile par niveau gagné
+  // ---- Économie v1 — valeurs MatchDesign (26/10/2026) ----
+  modeTest: false,                    // v1 : vraies règles (l'or est fictif, aucun paiement réel)
+  orDepart: 300,
+  etoilesParVictoire: 1,              // 1 étoile à la 1re victoire d'un niveau
+  orParVictoire: 50,                  // victoire (1re fois)...
+  orParTrancheCoups: 10,              // ... + 10 or par tranche de 5 coups restants avant Sweet Rush
+  trancheCoups: 5,
+  orRejeu: 20,                        // rejouer un niveau déjà gagné : +20 or, pas d'étoile
   offres: {
-    plus5coups: { prixOr: 900, coups: 5, declencheur: "ecran_defaite" }    // repère Royal Match ~900 pièces
+    // +5 coups : gratuit jusqu'au niveau 30, puis 900 / 1500 / 2000 or (prix croissant par achat dans la même partie)
+    plus5coups: { prixOr: 900, paliersOr: [900, 1500, 2000], gratuitJusquAuNiveau: 30, coups: 5, declencheur: "ecran_defaite" }
   },
+  vies: { max: 5, regenMin: 30, rechargeOr: 900, infiniesAvantNiveau: 100 },   // affichées, infinies avant le niveau 100
+  niveauMinBoosters: 5,               // écran pré-niveau (boosters) à partir du niveau 5
+  boosters: {                         // clé = power-up posé sur le plateau au début du niveau
+    ligneH:  { nom: "Couteau du Chef", emoji: "🔪", prixOr: 250 },
+    bombe:   { nom: "Poêle Flambée",   emoji: "🍳", prixOr: 400 },
+    couleur: { nom: "Étoile du Chef",  emoji: "⭐", prixOr: 600 },
+    cloche:  { nom: "Cloche Surprise", emoji: "🔔", prixOr: 350 }
+  },
+  // noms de boosters ArtStory/MatchDesign -> clés internes (coffres des pièces)
+  aliasBoosters: { knife: "ligneH", pan: "bombe", star: "couleur", cloche: "cloche", bell: "cloche",
+    tbd_matchdesign: "couleur" },     // MatchDesign : coffre de la salle = star (JSON livré avec « tbd_matchdesign »)
+  packsOr: [                          // achats RÉELS : non branchés -> « bientôt » + log (prix affichés indicatifs)
+    { id: "pack_panier",  nom: "Panier du marché",  or: 1000,  prixAffiche: "1,99 €" },
+    { id: "pack_cagette", nom: "Cagette du port",   or: 5500,  prixAffiche: "9,99 €" },
+    { id: "pack_coffre",  nom: "Coffre de Mamie Rose", or: 12000, prixAffiche: "19,99 €" }
+  ],
   journalMax: 200
 };
+
 const Economie = {
   CLE: "chefmatch.economie",
   lire() {
@@ -1303,18 +2215,50 @@ const Economie = {
   proposerOffre(id, contexte = {}) {
     const o = CONFIG_ECONOMIE.offres[id];
     if (!o) return { accorde: false, raison: "offre_inconnue", offre: id };
-    const e = this.lire();
+    const e = this.lire(), prixOr = this.prixOffre(id, contexte);
     let accorde = false, gratuit = false;
-    if (CONFIG_ECONOMIE.modeTest) { accorde = true; gratuit = true; }
-    else if (e.or >= o.prixOr) { e.or -= o.prixOr; accorde = true; }
-    this.journaliser(e, { type: "offre", offre: id, prixOr: o.prixOr, accorde, gratuit, ...contexte });
+    if (CONFIG_ECONOMIE.modeTest || prixOr === 0) { accorde = true; gratuit = true; }
+    else if (e.or >= prixOr) { e.or -= prixOr; accorde = true; }
+    this.journaliser(e, { type: "offre", offre: id, prixOr, accorde, gratuit, ...contexte });
     this.ecrire(e);
-    return { accorde, gratuit, offre: id, prixOr: o.prixOr, ...o };
+    return { ...o, accorde, gratuit, offre: id, prixOr };
   },
+  /** Prix d'une offre. +5 coups : 0 jusqu'au niveau 30, puis paliers selon contexte.achatsPartie (achats déjà faits dans la partie). */
+  prixOffre(id, contexte = {}) {
+    const o = CONFIG_ECONOMIE.offres[id]; if (!o) return null;
+    if (o.gratuitJusquAuNiveau && typeof contexte.niveau === "number" && contexte.niveau <= o.gratuitJusquAuNiveau) return 0;
+    if (o.paliersOr) return o.paliersOr[Math.min(contexte.achatsPartie || 0, o.paliersOr.length - 1)];
+    return o.prixOr;
+  },
+  /** Or d'une victoire : 1re fois 50 + 10/tranche de 5 coups restants (avant Sweet Rush) ; rejeu d'un niveau gagné : 20. */
+  orVictoire(coupsRestants, dejaGagne) {
+    const C = CONFIG_ECONOMIE;
+    return dejaGagne ? C.orRejeu : C.orParVictoire + C.orParTrancheCoups * Math.floor(Math.max(0, coupsRestants || 0) / C.trancheCoups);
+  },
+  /** Nom de booster externe (JSON) -> clé interne, ou null si inconnu. */
+  cleBooster(nom) { const a = CONFIG_ECONOMIE.aliasBoosters[nom] || nom; return CONFIG_ECONOMIE.boosters[a] ? a : null; },
   /** Boosters en stock (coffre de fin de lieu, futures offres). */
   ajouterBooster(type, n = 1, raison = "") { const e = this.lire(); e.boosters = e.boosters || {}; e.boosters[type] = (e.boosters[type] || 0) + n;
     this.journaliser(e, { type: "booster", booster: type, n, raison }); this.ecrire(e); return e.boosters[type]; },
   boosters() { return this.lire().boosters || {}; },
+  /** Achat d'un booster en or (boutique). */
+  acheterBooster(type) {
+    const b = CONFIG_ECONOMIE.boosters[type]; if (!b) return { ok: false, raison: "inconnu" };
+    if (!this.depenserOr(b.prixOr, "achat_booster_" + type)) return { ok: false, raison: "or", manque: b.prixOr - this.or() };
+    return { ok: true, stock: this.ajouterBooster(type, 1, "boutique") };
+  },
+  /** Consomme un booster (écran pré-niveau). */
+  utiliserBooster(type, contexte = {}) {
+    const e = this.lire(); e.boosters = e.boosters || {};
+    if (!(e.boosters[type] > 0)) return false;
+    e.boosters[type]--; this.journaliser(e, { type: "booster", booster: type, n: -1, raison: "pre_niveau", ...contexte }); this.ecrire(e); return true;
+  },
+  /** Achat réel (packs d'or) : PAS de paiement branché -> « bientôt », journalisé pour mesurer l'intérêt. */
+  acheterPackReel(id) {
+    const p = CONFIG_ECONOMIE.packsOr.find(x => x.id === id); const e = this.lire();
+    this.journaliser(e, { type: "achat_reel", pack: id, prixAffiche: p ? p.prixAffiche : null, statut: "bientot" }); this.ecrire(e);
+    return { ok: false, bientot: true, pack: p || null };
+  },
   reset() { Store.del(this.CLE); }
 };
 
@@ -1324,6 +2268,161 @@ const Economie = {
  *  (emojis + textes placeholder) en attendant ArtStory : remplacer "image" par assets/<id>.png et les dialogues.
  * ===================================================================== */
 /* Données ArtStory embarquées telles quelles (/workspace/chefmatch/renovation_terrace.json) */
+/* v0.4-dev : salle livrée par ArtStory (renovation_dining_room.json, embarqué : file:// et hors-ligne) */
+const RENOVATION_SALLE = {
+  "location": "dining_room",
+  "unlock_level": 13,
+  "background_before": "assets/room_before.jpg",
+  "background_after": "assets/room_after.jpg",
+  "layers_fullframe": true,
+  "tasks": [
+    {
+      "id": "clear_room",
+      "cost": 2,
+      "label": "Débarrasser les cartons et la poussière",
+      "image": "assets/task_room_clear.png",
+      "dialogue": [
+        {
+          "who": "emma",
+          "text": "Des cartons partout... Mamie gardait vraiment tout."
+        },
+        {
+          "who": "margot",
+          "text": "Et sous la poussière, il y a toujours des secrets, ma chérie."
+        }
+      ]
+    },
+    {
+      "id": "paint_walls",
+      "cost": 2,
+      "label": "Repeindre les murs",
+      "image": "assets/task_room_walls.png",
+      "dialogue": [
+        {
+          "who": "emma",
+          "text": "Crème et bleu marine, comme sur les vieilles photos."
+        },
+        {
+          "who": "leo",
+          "text": "On dirait que la salle respire de nouveau."
+        }
+      ]
+    },
+    {
+      "id": "fix_floor",
+      "cost": 2,
+      "label": "Poncer et vernir le parquet",
+      "image": "assets/task_room_floor.png",
+      "dialogue": [
+        {
+          "who": "victor",
+          "text": "Joli parquet. Il fera un beau sol pour mon futur hôtel."
+        },
+        {
+          "who": "emma",
+          "text": "Il fera surtout danser mes clients, Victor."
+        }
+      ]
+    },
+    {
+      "id": "place_tables",
+      "cost": 3,
+      "label": "Installer les tables et les nappes",
+      "image": "assets/task_room_tables.png",
+      "dialogue": [
+        {
+          "who": "margot",
+          "text": "Des nappes à carreaux ! Tout le port va en parler."
+        },
+        {
+          "who": "emma",
+          "text": "C'est un peu le but, Margot."
+        }
+      ]
+    },
+    {
+      "id": "add_chairs",
+      "cost": 3,
+      "label": "Ajouter les chaises et les banquettes",
+      "image": "assets/task_room_chairs.png",
+      "dialogue": [
+        {
+          "who": "leo",
+          "text": "J'ai retapé la banquette moi-même. Elle te plaît ?"
+        },
+        {
+          "who": "emma",
+          "text": "Elle est parfaite... merci, Léo."
+        },
+        {
+          "who": "margot",
+          "text": "Oh là là, je n'ai rien vu. Enfin, presque rien."
+        }
+      ]
+    },
+    {
+      "id": "hang_lamps",
+      "cost": 3,
+      "label": "Suspendre les lustres",
+      "image": "assets/task_room_lamps.png",
+      "dialogue": [
+        {
+          "who": "emma",
+          "text": "Mamie allumait ces lampes chaque soir à sept heures."
+        },
+        {
+          "who": "leo",
+          "text": "Alors on les allumera à sept heures."
+        }
+      ]
+    },
+    {
+      "id": "restore_counter",
+      "cost": 3,
+      "label": "Restaurer le comptoir et le passe-plat",
+      "image": "assets/task_room_counter.png",
+      "dialogue": [
+        {
+          "who": "emma",
+          "text": "Il y a quelque chose coincé derrière le passe-plat..."
+        },
+        {
+          "who": "emma",
+          "text": "Le carnet de Mamie Rose ! Et une lettre..."
+        }
+      ]
+    }
+  ],
+  "ending": {
+    "scene": "rose_notebook",
+    "dialogue": [
+      {
+        "who": "emma",
+        "text": "« Pour ma petite-fille Emma... et pour sa sœur. »"
+      },
+      {
+        "who": "emma",
+        "text": "Sa sœur ? Mais je suis fille unique !"
+      },
+      {
+        "who": "margot",
+        "text": "Ma chérie... il y a des choses que ta grand-mère ne t'a jamais dites."
+      },
+      {
+        "who": "victor",
+        "text": "Intéressant. Très intéressant."
+      },
+      {
+        "who": "emma",
+        "text": "Je trouverai la vérité. Et ce restaurant restera ouvert."
+      }
+    ]
+  },
+  "reward": {
+    "gold": 500,
+    "booster": "star"
+  }
+};
 const RENOVATION_TERRASSE = {
   "location": "terrace",
   "background_before": "assets/terrace_before.jpg",
@@ -1458,33 +2557,57 @@ const RENOVATION_TERRASSE = {
   }
 };
 const PERSONNAGES = { margot: "Margot", emma: "Emma", leo: "Léo", victor: "Victor", rose: "Rose" };
-const EMOJIS_TACHES = { clean_floor: "🧹", fix_railing: "🪵", place_tables: "🪑", add_chairs: "💺", hang_lights: "💡", install_sign: "🪧" };
+const EMOJIS_TACHES = { clean_floor: "🧹", fix_railing: "🪵", place_tables: "🪑", add_chairs: "💺", hang_lights: "💡", install_sign: "🪧",
+  clear_room: "📦", paint_walls: "🖌️", fix_floor: "🪵", hang_lamps: "💡", restore_counter: "🍷" };
 /* Placement des overlays 512×512 sur le décor portrait (réglé à l'œil sur terrace_before.jpg) : [x %, y %, largeur %] (centre) */
 const POSITIONS_OVERLAYS = {   // v0.3.4 : calques ArtStory plein cadre 1080×1920 posés en (0,0)
   clean_floor: [50, 50, 100], fix_railing: [50, 50, 100], place_tables: [50, 50, 100],
   add_chairs: [50, 50, 100], hang_lights: [50, 50, 100], install_sign: [50, 50, 100]
 };
 /** Format ArtStory -> format interne. Overlay = champ "image" de chaque tâche (pas de déduction depuis l'id). */
+const NOMS_LIEUX = { terrace: "La terrasse", dining_room: "La salle", kitchen: "La cuisine" };
+const COFFRE_DEFAUT = { or: 500, booster: "bombe", nbBooster: 1 };   // TODO MatchDesign : coffre par pièce
+const lignesDialogue = d => (d || []).map(l => typeof l === "string" ? l : (PERSONNAGES[l.who] || l.who) + " : " + l.text);
+/** Pièce annoncée mais pas encore livrée (renovation_<room>.json absent) : verrouillée, sans tâches. */
+function lieuAnnonce(next) {
+  const dl = lignesDialogue(next.dialogue), nom = NOMS_LIEUX[next.location] || next.location;
+  return { id: next.location, lieuArtStory: next.location, nom, verrouille: true, placeholder: true, niveauDeblocage: next.unlock_level || null,
+    annonce: "Bientôt" + (next.unlock_level ? " (dès le niveau " + next.unlock_level + ")" : "") + " : " + nom.toLowerCase() + " du bistrot !",
+    dialogue: dl.length ? dl : ["Emma : La terrasse brille... Prochaine étape : la salle de Mamie Rose. (placeholder)"], taches: [] };
+}
+/**
+ * Coffre d'une pièce : bloc reward {gold, booster} du JSON (salle) sinon coffre par défaut (terrasse).
+ * Booster inconnu -> coffre en or seul + warning (pas de crash).
+ */
+function coffreDepuisArtStory(d, defaut) {
+  if (!d.reward) return defaut;
+  const c = { or: typeof d.reward.gold === "number" ? d.reward.gold : defaut.or, booster: null, nbBooster: 0, boosterSource: d.reward.booster || null };
+  const k = d.reward.booster ? Economie.cleBooster(d.reward.booster) : null;
+  if (k) { c.booster = k; c.nbBooster = d.reward.booster_count || 1; }
+  else if (d.reward.booster) { c.warning = "booster inconnu « " + d.reward.booster + " » : coffre en or seul";
+    if (typeof console !== "undefined") console.warn("[Renovation] " + d.location + " : " + c.warning); }
+  return c;
+}
 function lieuDepuisArtStory(d, nom, coffre) {
-  return { id: d.location, nom, avant: d.background_before, apres: d.background_after, coffre,
+  coffre = coffreDepuisArtStory(d, coffre);
+  return { id: d.location, nom, avant: d.background_before, apres: d.background_after, coffre, next: d.next || null,
+    niveauDeblocage: d.unlock_level || null,
+    ending: d.ending ? { scene: d.ending.scene || null, dialogue: lignesDialogue(d.ending.dialogue) } : null,
     taches: d.tasks.map(t => ({ id: t.id, cout: t.cost, nom: t.label, emoji: EMOJIS_TACHES[t.id] || "🔨",
       image: t.image || null,                      // overlay ArtStory (champ "image" du JSON) ; absent -> fondu seul
-      pos: POSITIONS_OVERLAYS[t.id] || [50, 50, 40],
+      pos: POSITIONS_OVERLAYS[t.id] || (d.layers_fullframe ? [50, 50, 100] : [50, 50, 40]),
       dialogue: t.dialogue.map(l => typeof l === "string" ? l : (PERSONNAGES[l.who] || l.who) + " : " + l.text) })) };
 }
 const DATA_RENOVATION = {
-  version: 2,
+  version: 3,
+  // Pièce n : renovation_<room>.json (ArtStory). Son champ next {location, unlock_level, dialogue} annonce la pièce n+1,
+  // chargée à chaud dès que le fichier renovation_<next.location>.json existe (Renovation.chargerSuivants).
   lieux: [
-    lieuDepuisArtStory(RENOVATION_TERRASSE, "La terrasse", { or: 500, booster: "bombe", nbBooster: 1 }),
-    { id: "salle", lieuArtStory: (RENOVATION_TERRASSE.next || {}).location || "dining_room", nom: "La salle", verrouille: true,
-      niveauDeblocage: (RENOVATION_TERRASSE.next || {}).unlock_level || null,
-      annonce: "Bientôt" + ((RENOVATION_TERRASSE.next || {}).unlock_level ? " (dès le niveau " + RENOVATION_TERRASSE.next.unlock_level + ")" : "") + " : la salle du bistrot !",
-      // 1er dialogue : fourni par ArtStory (RENOVATION_TERRASSE.next.dialogue) sinon placeholder
-      dialogue: ((RENOVATION_TERRASSE.next || {}).dialogue || []).map(l => typeof l === "string" ? l : (PERSONNAGES[l.who] || l.who) + " : " + l.text)
-        .concat(((RENOVATION_TERRASSE.next || {}).dialogue || []).length ? [] : ["Emma : La terrasse brille... Prochaine étape : la salle de Mamie Rose. (placeholder)"]),
-      taches: [] }
+    lieuDepuisArtStory(RENOVATION_TERRASSE, NOMS_LIEUX.terrace, COFFRE_DEFAUT),
+    ...(RENOVATION_TERRASSE.next ? [lieuAnnonce(RENOVATION_TERRASSE.next)] : [])
   ]
 };
+// salle livrée : remplace l'annonce (niveau 13 + dialogue d'arrivée conservés) ; Renovation est défini plus bas -> après sa déclaration
 const Renovation = {
   CLE: "chefmatch.renovation",
   lieu() { return DATA_RENOVATION.lieux.find(l => l.id === this.etat().lieu) || DATA_RENOVATION.lieux[0]; },
@@ -1513,12 +2636,84 @@ const Renovation = {
     s.faites.push(id); this.ecrire(s);
     const res = { ok: true, tache: t, dialogue: t.dialogue.slice(), fini: false, progression: s.faites.length / lieu.taches.length };
     if (this.termine() && !s.coffreRecu) {
-      const c = lieu.coffre; Economie.ajouterOr(c.or, "coffre_" + lieu.id); Economie.ajouterBooster(c.booster, c.nbBooster, "coffre_" + lieu.id);
+      const c = lieu.coffre; Economie.ajouterOr(c.or, "coffre_" + lieu.id);
+      if (c.booster) Economie.ajouterBooster(c.booster, c.nbBooster, "coffre_" + lieu.id);
+      else if (c.warning) { const e = Economie.lire(); Economie.journaliser(e, { type: "warning", lieu: lieu.id, message: c.warning }); Economie.ecrire(e); }
       s.coffreRecu = true; this.ecrire(s);
-      const suivant = DATA_RENOVATION.lieux[DATA_RENOVATION.lieux.indexOf(lieu) + 1] || null;
-      Object.assign(res, { fini: true, coffre: c, suivant: suivant && { id: suivant.id, nom: suivant.nom, verrouille: !!suivant.verrouille, annonce: suivant.annonce, dialogue: suivant.dialogue || [] } });
+      if (lieu.ending) res.ending = lieu.ending;          // scène de fin de pièce (ex. carnet de Rose)
+      const suivant = this.suivant(lieu);
+      Object.assign(res, { fini: true, coffre: c, suivant: suivant && { id: suivant.id, nom: suivant.nom, verrouille: !!suivant.verrouille, annonce: suivant.annonce,
+        dialogue: suivant.dialogue || [], niveauDeblocage: suivant.niveauDeblocage } });
     }
     return res;
+  },
+  /** Pièce suivante dans l'enchaînement (ou null). */
+  suivant(lieu = this.lieu()) { return DATA_RENOVATION.lieux[DATA_RENOVATION.lieux.indexOf(lieu) + 1] || null; },
+  /**
+   * Enregistre une pièce livrée par ArtStory (contenu de renovation_<room>.json).
+   * Remplace l'annonce verrouillée du même id, garde le niveau de déblocage et le dialogue d'annonce,
+   * puis annonce à son tour la pièce suivante si son JSON a un champ next.
+   */
+  enregistrerLieu(json, coffre = COFFRE_DEFAUT) {
+    if (!json || !json.location || !Array.isArray(json.tasks)) return null;
+    const i = DATA_RENOVATION.lieux.findIndex(l => l.id === json.location), ancien = i >= 0 ? DATA_RENOVATION.lieux[i] : null;
+    const lieu = lieuDepuisArtStory(json, NOMS_LIEUX[json.location] || json.location, coffre);
+    lieu.niveauDeblocage = lieu.niveauDeblocage || (ancien ? ancien.niveauDeblocage : null); lieu.dialogueArrivee = ancien ? ancien.dialogue : []; lieu.annonce = ancien ? ancien.annonce : null;
+    if (i >= 0) DATA_RENOVATION.lieux[i] = lieu; else DATA_RENOVATION.lieux.push(lieu);
+    if (json.next && !DATA_RENOVATION.lieux.some(l => l.id === json.next.location)) DATA_RENOVATION.lieux.push(lieuAnnonce(json.next));
+    return lieu;
+  },
+  /** Charge les pièces annoncées dont le JSON existe (navigateur : fetch ; tests : fonction injectée). */
+  async chargerSuivants(lire = (typeof fetch !== "undefined" ? url => fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }) : null)) {
+    if (!lire) return [];
+    const charges = [];
+    for (let garde = 0; garde < 10; garde++) {
+      const l = DATA_RENOVATION.lieux.find(x => x.placeholder && !x.essaye); if (!l) break;
+      l.essaye = true;
+      try { const lieu = this.enregistrerLieu(await lire("renovation_" + l.id + ".json")); if (lieu) charges.push(lieu.id); } catch (e) { /* pas encore livré */ }
+    }
+    return charges;
+  },
+  /** État de la pièce suivante : "a_terminer" | "en_preparation" | "niveau" | "pret" | null */
+  statutSuivant() {
+    const s = this.suivant(); if (!s) return null;
+    if (!this.termine()) return "a_terminer";
+    if (s.placeholder) return "en_preparation";
+    if (s.niveauDeblocage && Progres.lire().debloques < s.niveauDeblocage) return "niveau";
+    return "pret";
+  },
+  /** Passe à la pièce suivante (si "pret") : progression remise à zéro, historique conservé. */
+  passerAuSuivant() {
+    if (this.statutSuivant() !== "pret") return { ok: false, raison: this.statutSuivant() };
+    const s = this.etat(), suiv = this.suivant();
+    this.ecrire({ lieu: suiv.id, faites: [], coffreRecu: false, termines: [...(s.termines || []), s.lieu] });
+    return { ok: true, lieu: suiv.id, dialogue: suiv.dialogueArrivee || [] };
+  },
+  reset() { Store.del(this.CLE); }
+};
+Renovation.enregistrerLieu(RENOVATION_SALLE);
+
+/** v0.4-dev : vies (max 5, +1 / 30 min, recharge en or) — affichées mais infinies avant le niveau 100. */
+const Vies = {
+  CLE: "chefmatch.vies",
+  lire(maintenant = Date.now()) {
+    const V = CONFIG_ECONOMIE.vies, s = Store.get(this.CLE, null) || { n: V.max, t: maintenant };
+    if (s.n < V.max) { const k = Math.floor((maintenant - s.t) / (V.regenMin * 60000)); if (k > 0) { s.n = Math.min(V.max, s.n + k); s.t = s.n >= V.max ? maintenant : s.t + k * V.regenMin * 60000; } }
+    else s.t = maintenant;
+    return s;
+  },
+  nombre(m) { return this.lire(m).n; },
+  infinies(idNiveau) { return !(idNiveau >= CONFIG_ECONOMIE.vies.infiniesAvantNiveau); },
+  /** Défaite : -1 vie, sauf avant le niveau 100 (infinies, journalisé). */
+  perdre(idNiveau, m = Date.now()) {
+    if (this.infinies(idNiveau)) return { perdue: false, infinies: true };
+    const s = this.lire(m); if (s.n >= CONFIG_ECONOMIE.vies.max) s.t = m; s.n = Math.max(0, s.n - 1); Store.set(this.CLE, s); return { perdue: true, n: s.n };
+  },
+  peutJouer(idNiveau, m) { return this.infinies(idNiveau) || this.nombre(m) > 0; },
+  recharger(m = Date.now()) {
+    if (this.nombre(m) >= CONFIG_ECONOMIE.vies.max) return { ok: false, raison: "pleines" };
+    if (!Economie.depenserOr(CONFIG_ECONOMIE.vies.rechargeOr, "recharge_vies")) return { ok: false, raison: "or" };
+    Store.set(this.CLE, { n: CONFIG_ECONOMIE.vies.max, t: m }); return { ok: true };
   },
   reset() { Store.del(this.CLE); }
 };
@@ -1526,7 +2721,9 @@ const Renovation = {
 /** Progression : nombre de niveaux débloqués + meilleur résultat par niveau (id). */
 const Progres = {
   lire() { const p = Store.get(CLES.progres, null); return p && p.debloques ? p : { debloques: 1, meilleurs: {} }; },
-  estDebloque(index) { return index < this.lire().debloques; },
+  estDebloque(index) { return index < this.debloquesEffectifs(); },
+  /** Les niveaux rejetés par la validation ne bloquent pas la progression : on les saute. */
+  debloquesEffectifs() { let d = this.lire().debloques; while (d < NIVEAUX.length && NIVEAUX[d - 1] && NIVEAUX[d - 1].invalide) d++; return d; },
   enregistrer(index, id, victoire, coupsRestants) {
     const p = this.lire(), m = p.meilleurs[id] || { essais: 0, victoires: 0, meilleursCoupsRestants: null };
     m.essais++;
@@ -1589,6 +2786,19 @@ class Board {
   fixe(r, c) { return !!((this.bloc[r] && this.bloc[r][c]) || (this.dessus[r] && this.dessus[r][c])); }
   /** Power-up activable par double-tap (pas sous glace/chaîne). */
   peutActiver(r, c) { const p = this.get(r, c); return !!(p && p.special && !this.dessus[r][c]); }
+  /** v0.4-dev : pose les boosters pré-niveau sur des pièces normales libres. Renvoie [{r,c,special}]. */
+  poserBoosters(types) {
+    const poses = [];
+    for (const k of types) {
+      const libres = this.cases().filter(({ r, c }) => { const p = this.grille[r][c]; return p && !p.special && !p.plat && !this.fixe(r, c); });
+      if (!libres.length) break;
+      const { r, c } = libres[Math.floor(this.rng() * libres.length)], p = this.grille[r][c];
+      p.special = k === "ligneH" ? (this.rng() < .5 ? "ligneH" : "ligneV") : k;
+      if (k === "couleur") p.type = -1;
+      poses.push({ r, c, special: p.special });
+    }
+    return poses;
+  }
   /** Nombre de bloqueurs d'un type encore présents (toutes couches). */
   compterBloqueurs(type) {
     let n = 0;
@@ -1597,7 +2807,13 @@ class Board {
     return n;
   }
   positionsPlats() { return this.cases().filter(({ r, c }) => this.grille[r] && this.grille[r][c] && this.grille[r][c].plat); }
-  /** Livraison : un plat arrivé sur la case mobile la plus basse de sa colonne sort du plateau. */
+  /**
+   * Livraison : un plat arrivé sur la dernière case jouable ET mobile de sa colonne sort du plateau
+   * (trous '#' ignorés, cases à bloqueur occupant ou pièce figée sous glace/chaîne traversées comme par la gravité).
+   * Appelée après chaque chute : toute pièce détruite sous un plat (match horizontal, vertical, L/T, power-up) le fait descendre.
+   * NB géométrie : à 1 ou 2 cases du bas, aucun match vertical ne tient sous le plat (il faut 3 cases) ;
+   * seuls un match horizontal/L/T plus bas, un power-up ou l'échange du plat avec la pièce du dessous le font descendre.
+   */
   collecterPlats() {
     if (!this.platsInit.length) return [];
     const sortis = [];
@@ -2373,6 +3589,14 @@ class Game {
   }
   /** Lance le niveau NIVEAUX[index] (format MatchDesign). */
   demarrer(index = this.indexNiveau) {
+    if (index !== "demo" && index !== -1 && NIVEAUX[index] && NIVEAUX[index].invalide) {   // niveau rejeté par la validation
+      const N = NIVEAUX[index];
+      if (typeof console !== "undefined") console.error(`[Niveaux] niveau ${N.id} non jouable : ` + N.invalide.map(e => e.code).join(", "));
+      this.niveauRefuse = { id: N.id, erreurs: N.invalide };
+      if (typeof document !== "undefined" && typeof Menu !== "undefined" && Menu.el && document.getElementById("grilleNiveaux")) Menu.ouvrir();
+      return false;
+    }
+    this.niveauRefuse = null;
     // index -1 (ou "demo") = niveau de démonstration des bloqueurs
     if (index === "demo" || index === -1) this.indexNiveau = -1;
     else this.indexNiveau = Math.max(0, Math.min(NIVEAUX.length - 1, index));
@@ -2397,6 +3621,14 @@ class Game {
     if (tuto) { const coup = this.board.preparerTuto(tuto); if (coup) { this.indice = coup; this.tutoCoup = coup; } }
     this.afficherMessage(this.objectifs.map(o => this.texteObjectif(o)).join("\n"), 2200);
     this.log = new PlaytestLog(this); this.sessions.push(this.log.data);
+    // v0.4-dev : boosters choisis à l'écran pré-niveau (aucun tirage aléatoire en plus si aucun booster)
+    this.achatsPlus5 = 0;   // nouvelle partie : paliers +5 coups remis à zéro
+    const bst = this.boostersEnAttente; this.boostersEnAttente = null; this.boostersUtilises = [];
+    if (bst && bst.length && !tuto) {
+      const ok = bst.filter(k => Economie.utiliserBooster(k, { niveau: N.id }));
+      this.boostersUtilises = this.board.poserBoosters(ok);
+      if (ok.length) { this.log.evenement("boosters_pre_niveau"); Object.assign(this.log.data.evenements[this.log.data.evenements.length - 1], { boosters: ok }); }
+    }
     this.board.grille.forEach((ligne, r) => ligne.forEach((p, c) => { if (!p) return; const v = this.vue(p); v.x = c; v.y = r; }));
     if (this.renderer) this.renderer.redimensionner();
   }
@@ -2757,16 +3989,22 @@ class Game {
     this.changerEtat(ETAT.END);
     this.log.fin(victoire ? "victoire" : "defaite");
     if (victoire) this.log.data.coupsRestantsAvantBonus = this.coupsAvantRush;
+    const dejaGagne = this.indexNiveau >= 0 && ((Progres.lire().meilleurs[this.niveau.id] || {}).victoires || 0) > 0;
     if (this.indexNiveau >= 0) Progres.enregistrer(this.indexNiveau, this.niveau.id, victoire, victoire ? this.coupsAvantRush : 0);
-    this.etoilesGagnees = victoire && this.indexNiveau >= 0 ? Economie.gagnerEtoilesNiveau(this.niveau.id) : 0;
+    this.soldeAvant = { or: Economie.or(), etoiles: Economie.etoiles() };
+    this.etoilesGagnees = victoire && this.indexNiveau >= 0 && !dejaGagne ? Economie.gagnerEtoilesNiveau(this.niveau.id) : 0;
+    this.orGagne = victoire && this.indexNiveau >= 0 ? Economie.orVictoire(this.coupsAvantRush, dejaGagne) : 0;
+    if (!victoire && this.indexNiveau >= 0) this.vie = Vies.perdre(this.niveau.id);
+    if (this.orGagne) Economie.ajouterOr(this.orGagne, "victoire_niveau_" + this.niveau.id);
     if (typeof document !== "undefined" && document.getElementById("badgeRenover")) EcranRenovation.majBadge();
     UI.afficherFin(victoire, this);
   }
   /** Bouton « +5 coups » */
   async continuer() {
     // v0.3.1 : passe par le module Economie (gratuit pour l'instant, mais journalisé)
-    const r = Economie.proposerOffre("plus5coups", { niveau: this.niveau.id, coupsJoues: this.log.data.coupsJoues });
-    if (!r.accorde) return;
+    const r = Economie.proposerOffre("plus5coups", { niveau: this.niveau.id, coupsJoues: this.log.data.coupsJoues, achatsPartie: this.achatsPlus5 || 0 });
+    if (!r.accorde) { this.log.evenement("plus5_refuse"); return; }
+    if (!r.gratuit) this.achatsPlus5 = (this.achatsPlus5 || 0) + 1;   // prix croissant dans la même partie
     this.log.evenement("plus5");
     Object.assign(this.log.data.evenements[this.log.data.evenements.length - 1], { offre: r.offre, gratuit: r.gratuit, prixOr: r.prixOr });
     this.coups += r.coups; UI.cacher(); this.changerEtat(ETAT.IDLE);
@@ -2851,10 +4089,13 @@ const UI = {
     document.getElementById("texteFin").textContent = victoire ? txt("win.text") + (jeu.etoilesGagnees ? "\n⭐ +" + jeu.etoilesGagnees + " étoile (total " + Economie.etoiles() + ")" : "")
       : txt("lose.text") + "\nIl reste : " + jeu.objectifs.filter(o => o.restant > 0).map(o => o.restant + " " + (o.emoji || CONFIG.types[o.type])).join(", ");
     const p5 = document.getElementById("btnPlus5"), sv = document.getElementById("btnSuivant"), rj = document.getElementById("btnRejouer");
-    p5.textContent = txt("lose.extra_moves"); sv.textContent = txt("win.button");
+    { const px = Economie.prixOffre("plus5coups", { niveau: jeu.niveau.id, achatsPartie: jeu.achatsPlus5 || 0 });
+      p5.textContent = txt("lose.extra_moves") + (px ? " – 🪙 " + px : " (gratuit)"); } sv.textContent = txt("win.button");
     rj.textContent = victoire ? "Rejouer" : txt("lose.retry");
     p5.style.display = victoire ? "none" : "block"; sv.style.display = victoire ? "block" : "none";
     document.getElementById("overlay").classList.add("show");
+    if (victoire && jeu.soldeAvant && (jeu.orGagne || jeu.etoilesGagnees)) setTimeout(() => Solde.animerGain(jeu.soldeAvant.or, jeu.soldeAvant.etoiles), 350);
+    else Solde.maj();
   },
   cacher() { document.getElementById("overlay").classList.remove("show"); }
 };
@@ -2917,8 +4158,11 @@ const Menu = {
   el: () => document.getElementById("ecranNiveaux"),
   construire() {
     const g = document.getElementById("grilleNiveaux"), p = Progres.lire(); g.innerHTML = "";
+    const deb = Progres.debloquesEffectifs();
     NIVEAUX.forEach((n, i) => {
-      const b = document.createElement("button"), ok = i < p.debloques, m = p.meilleurs[n.id];
+      if (n.invalide) { const b = document.createElement("button"); b.className = "carteNiv verrou invalide"; b.disabled = true;
+        b.innerHTML = `<b>⚠️ Niveau ${n.id}</b><div class="best">Non jouable (niveau en correction)</div>`; b.title = n.invalide.map(e => e.message).join("\n"); g.appendChild(b); return; }
+      const b = document.createElement("button"), ok = i < deb, m = p.meilleurs[n.id];
       b.className = "carteNiv" + (ok ? "" : " verrou") + (m && m.victoires ? " gagne" : "");
       b.dataset.index = i; b.disabled = !ok;
       b.innerHTML = `<b>${ok ? "" : "🔒 "}Niveau ${n.id}</b><div class="obj">${n.goals.map(o => emojiObjectif(o) + "×" + (o.count ?? "tous")).join(" ")}</div>` +
@@ -2927,14 +4171,80 @@ const Menu = {
       g.appendChild(b);
     });
   },
-  ouvrir() { this.construire(); UI.cacher(); this.el().classList.add("show"); },
+  ouvrir() { this.construire(); UI.cacher(); this.el().classList.add("show"); Solde.maj(); },
   fermer() { this.el().classList.remove("show"); },
   choisir(i) {
     this.fermer();
     // L'intro n'est montrée qu'une fois, avant le niveau 1
     if (i === 0 && !Store.get(CLES.intro, false)) Intro.jouer(() => Menu.jeu.allerNiveau(0));
+    else if (PreNiveau.concerne(NIVEAUX[i])) PreNiveau.ouvrir(i);
     else Menu.jeu.allerNiveau(i);
   }
+};
+/* v0.4-dev : solde permanent (carte, rénovation, boutique, fin de niveau) + animation de gain */
+const Solde = {
+  html(or, et) { const n = Vies.nombre();   // vies infinies avant le niveau 100 : affichées pleines avec ∞
+    return `❤️ <b class="vVies">${Progres.lire().debloques < CONFIG_ECONOMIE.vies.infiniesAvantNiveau ? "∞" : n}</b> 🪙 <b class="vOr">${Math.round(or)}</b> ⭐ <b class="vEt">${Math.round(et)}</b>`; },
+  maj() { if (typeof document === "undefined" || !document.querySelectorAll) return; document.querySelectorAll(".solde").forEach(el => { el.innerHTML = this.html(Economie.or(), Economie.etoiles()); }); },
+  /** Compte de l'ancien solde vers le nouveau + « +N » qui s'envole. */
+  animerGain(or0, et0) {
+    const or1 = Economie.or(), et1 = Economie.etoiles(), t0 = performance.now(), D = 900;
+    document.querySelectorAll(".solde").forEach(el => {
+      el.innerHTML = this.html(or0, et0);
+      [[or1 - or0, "🪙"], [et1 - et0, "⭐"]].forEach(([d, ic], k) => { if (d <= 0) return;
+        const g = document.createElement("span"); g.className = "gain"; g.style.animationDelay = (k * 180) + "ms"; g.textContent = "+" + d + " " + ic; el.appendChild(g); });
+      el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse");
+    });
+    const pas = t => { const k = Math.max(0, Math.min(1, (t - t0) / D)), e = 1 - (1 - k) * (1 - k);
+      document.querySelectorAll(".solde").forEach(el => { const o = el.querySelector(".vOr"), s = el.querySelector(".vEt");
+        if (o) o.textContent = Math.round(or0 + (or1 - or0) * e); if (s) s.textContent = Math.round(et0 + (et1 - et0) * e); });
+      if (k < 1) requestAnimationFrame(pas); else setTimeout(() => this.maj(), 900); };
+    requestAnimationFrame(pas);
+  }
+};
+/* v0.4-dev : boutique (or fictif, aucun paiement réel) */
+const Boutique = {
+  el: () => document.getElementById("ecranBoutique"),
+  ouvrir(retour = null) { this.retour = retour; this.construire(); this.el().classList.add("show"); },
+  fermer() { this.el().classList.remove("show"); Solde.maj(); if (this.retour) this.retour(); },
+  message(t) { const m = document.getElementById("boutiqueMsg"); m.textContent = t; m.classList.remove("pop"); void m.offsetWidth; m.classList.add("pop"); },
+  construire() {
+    const stock = Economie.boosters(), lb = document.getElementById("boutiqueBoosters"), lp = document.getElementById("boutiquePacks");
+    lb.innerHTML = ""; lp.innerHTML = "";
+    Object.entries(CONFIG_ECONOMIE.boosters).forEach(([k, b]) => { const d = document.createElement("button"); d.className = "article";
+      d.innerHTML = `<span class="ico">${b.emoji}</span><b>${b.nom}</b><small>en stock : ${stock[k] || 0}</small><span class="prix">🪙 ${b.prixOr}</span>`;
+      d.onclick = () => { const r = Economie.acheterBooster(k);
+        this.message(r.ok ? `${b.emoji} ${b.nom} acheté !` : `Il te manque 🪙 ${r.manque} : gagne des niveaux !`); this.construire(); };
+      lb.appendChild(d); });
+    CONFIG_ECONOMIE.packsOr.forEach(p => { const d = document.createElement("button"); d.className = "article pack";
+      d.innerHTML = `<span class="ico">🧺</span><b>${p.nom}</b><small>🪙 ${p.or}</small><span class="prix">${p.prixAffiche}</span>`;
+      d.onclick = () => { Economie.acheterPackReel(p.id); this.message("🛠 Achats réels : bientôt ! (aucun paiement)"); };
+      lp.appendChild(d); });
+    Solde.maj();
+  }
+};
+/* v0.4-dev : écran pré-niveau (boosters), à partir de CONFIG_ECONOMIE.niveauMinBoosters */
+const PreNiveau = {
+  el: () => document.getElementById("ecranPreNiveau"),
+  /** Écran pré-niveau pour ce niveau ? (niveau >= 5, hors tutoriel et démo) */
+  concerne(N) { return !!N && typeof N.id === "number" && N.id >= CONFIG_ECONOMIE.niveauMinBoosters && !N.tutorial; },
+  ouvrir(index) {
+    this.index = index; this.choix = new Set(); const N = NIVEAUX[index];
+    document.getElementById("preTitre").textContent = "Niveau " + N.id;
+    document.getElementById("preObjectifs").textContent = N.goals.map(o => emojiObjectif(o) + " ×" + (o.count ?? "tous")).join("   ") + "   ·   " + N.moves + " coups";
+    this.construire(); this.el().classList.add("show");
+  },
+  construire() {
+    const stock = Economie.boosters(), l = document.getElementById("preBoosters"); l.innerHTML = "";
+    Object.entries(CONFIG_ECONOMIE.boosters).forEach(([k, b]) => { const n = stock[k] || 0, d = document.createElement("button");
+      d.className = "boost" + (this.choix.has(k) ? " on" : "") + (n ? "" : " vide");
+      d.innerHTML = `<span class="ico">${b.emoji}</span><small>${b.nom}</small><span class="nb">${n}</span>`;
+      d.onclick = () => { if (!n) return Boutique.ouvrir(() => this.construire()); this.choix.has(k) ? this.choix.delete(k) : this.choix.add(k); this.construire(); };
+      l.appendChild(d); });
+    Solde.maj();
+  },
+  jouer() { this.el().classList.remove("show"); Menu.jeu.boostersEnAttente = [...this.choix]; Menu.jeu.allerNiveau(this.index); },
+  retour() { this.el().classList.remove("show"); Menu.ouvrir(); }
 };
 const EcranRenovation = {
   el: () => document.getElementById("ecranRenovation"),
@@ -2947,7 +4257,7 @@ const EcranRenovation = {
   construire(nouveau = null) {
     const lieu = Renovation.lieu(), s = Renovation.etat(), et = Economie.etoiles();
     document.getElementById("renoTitre").textContent = "🔨 " + lieu.nom;
-    document.getElementById("renoEtoiles").textContent = "⭐ " + et;
+    // (solde or + étoiles affiché par Solde.maj)
     // Décor : avant -> après, opacité de « après » = tâches faites / nombre de tâches (fondu animé par CSS)
     const av = document.getElementById("renoAvant"), ap = document.getElementById("renoApres"), prog = s.faites.length / lieu.taches.length;
     av.style.backgroundImage = `url("${lieu.avant}")`; ap.style.backgroundImage = `url("${lieu.apres}")`;
@@ -2965,8 +4275,16 @@ const EcranRenovation = {
       b.className = "tache" + (faite ? " faite" : t.cout <= et ? " ok" : " cher");
       b.innerHTML = `<b>${t.emoji} ${t.nom}</b>${faite ? "✔ Terminé" : "⭐ " + t.cout}`;
       if (!faite) b.onclick = () => this.choisir(t.id); liste.appendChild(b); });
-    const suiv = DATA_RENOVATION.lieux[DATA_RENOVATION.lieux.indexOf(lieu) + 1];
-    document.getElementById("renoSuivant").textContent = suiv ? (Renovation.termine() ? "🔓 " : "🔒 ") + suiv.nom + " – " + (suiv.annonce || "") : "";
+    const suiv = Renovation.suivant(lieu), st = Renovation.statutSuivant(), zs = document.getElementById("renoSuivant");
+    zs.innerHTML = "";
+    if (suiv) {
+      const msg = { a_terminer: "🔒 " + suiv.nom + " – " + (suiv.annonce || ""), en_preparation: "🔒 " + suiv.nom + " – en préparation, bientôt !",
+        niveau: "🔒 " + suiv.nom + " – débloquée au niveau " + suiv.niveauDeblocage, pret: "🔓 " + suiv.nom + " est prête !" }[st];
+      zs.textContent = msg;
+      if (st === "pret") { const b = document.createElement("button"); b.className = "btnAlt"; b.textContent = "Aller dans " + suiv.nom.toLowerCase() + " →";
+        b.onclick = () => { const r = Renovation.passerAuSuivant(); this.construire(); if (r.ok && r.dialogue.length) this.bulles(r.dialogue); }; zs.appendChild(b); }
+    }
+    Solde.maj();
     this.majBadge();
   },
   choisir(id) {
@@ -2974,14 +4292,23 @@ const EcranRenovation = {
     if (!r.ok) { this.bulles([r.raison === "etoiles" ? `Il te manque ${r.manque} étoile(s) : gagne des niveaux !` : "Déjà fait !"]); return; }
     this.construire(id);
     const lignes = [...r.dialogue];
-    if (r.fini) lignes.push(`🎁 Coffre de la terrasse : +${r.coffre.or} pièces d'or et ${r.coffre.nbBooster} ${POWERUPS[r.coffre.booster] ? POWERUPS[r.coffre.booster].emoji : ""} booster !`,
-      r.suivant ? `✨ Prochain lieu : ${r.suivant.nom} (bientôt). ${r.suivant.annonce || ""}` : "", ...(r.suivant ? r.suivant.dialogue : []));
-    setTimeout(() => this.bulles(lignes.filter(Boolean)), 1000);   // après le fondu
+    const nomLieu = Renovation.lieu().nom.replace(/^La /, "la ");
+    if (r.fini) lignes.push(`🎁 Coffre de ${nomLieu} : +${r.coffre.or} pièces d'or` + (r.coffre.booster ? ` et ${r.coffre.nbBooster} ${POWERUPS[r.coffre.booster] ? POWERUPS[r.coffre.booster].emoji : ""} booster !` : " !"));
+    const suite = r.fini && r.suivant ? [`✨ Prochain lieu : ${r.suivant.nom}. ${r.suivant.annonce || ""}`, ...(r.suivant.dialogue || [])] : [];
+    setTimeout(() => this.bulles(lignes.filter(Boolean), r.ending ? () => this.scene(r.ending, () => suite.length && this.bulles(suite)) : null), 1000);   // après le fondu
+    if (!r.ending && suite.length) lignes.push(...suite);
   },
-  bulles(lignes) {
+  /** Scène de fin de pièce (bloc ending ArtStory) : voile + titre + répliques. */
+  scene(ending, ensuite) {
+    const v = document.getElementById("renoFinale");
+    v.querySelector("h2").textContent = ({ rose_notebook: "📖 Le carnet de Mamie Rose" })[ending.scene] || "✨";
+    v.classList.add("show");
+    this.bulles(ending.dialogue, () => { v.classList.remove("show"); if (ensuite) ensuite(); });
+  },
+  bulles(lignes, fin = null) {
     const b = document.getElementById("renoBulle"); let i = 0;
     const montrer = () => { b.classList.remove("show"); void b.offsetWidth; b.innerHTML = lignes[i] + "<small>touche pour continuer</small>"; b.classList.add("show"); };
-    b.onclick = () => { i++; if (i < lignes.length) montrer(); else b.classList.remove("show"); };
+    b.onclick = () => { i++; if (i < lignes.length) montrer(); else { b.classList.remove("show"); if (fin) fin(); } };
     montrer();
   }
 };
@@ -3008,7 +4335,18 @@ if (typeof document !== "undefined" && document.getElementById("jeu")) {
   EcranRenovation.majBadge();
   // ?renovation=1 ouvre l'écran ; ?renovation=demo (debug) : 4 étoiles + 2 tâches faites, pour captures/playtest
   if (/[?&]renovation=demo/.test(location.search)) { const e = Economie.lire(); e.etoiles = 4; Economie.ecrire(e); Renovation.ecrire({ lieu: DATA_RENOVATION.lieux[0].id, faites: ["clean_floor", "fix_railing"], coffreRecu: false }); }
+  if (/[?&]boutique=demo/.test(location.search)) { Economie.ajouterOr(2000, "debug"); Economie.ajouterBooster("bombe", 2, "debug"); Economie.ajouterBooster("ligneH", 1, "debug"); }
+  { const ms = /[?&]renovation=salle(\d|Fin)/.exec(location.search);
+    if (ms) { const S = DATA_RENOVATION.lieux.find(l => l.id === "dining_room"), n = ms[1] === "Fin" ? 6 : +ms[1];
+      Renovation.ecrire({ lieu: S.id, faites: S.taches.slice(0, n).map(t => t.id), coffreRecu: false, termines: ["terrace"] });
+      const e = Economie.lire(); e.etoiles = ms[1] === "Fin" ? 3 : 4; Economie.ecrire(e); EcranRenovation.ouvrir();
+      if (ms[1] === "Fin") setTimeout(() => EcranRenovation.choisir(S.taches[6].id), 300); } }
+  if (/[?&]renovation=ending/.test(location.search)) { const S = DATA_RENOVATION.lieux.find(l => l.id === "dining_room");   // capture de la scène de fin
+    Renovation.ecrire({ lieu: S.id, faites: S.taches.map(t => t.id), coffreRecu: true, termines: ["terrace"] }); EcranRenovation.ouvrir(); EcranRenovation.scene(S.ending); }
   if (/[?&]renovation=(1|demo)/.test(location.search)) EcranRenovation.ouvrir();
+  if (/[?&]boutique=(1|demo)/.test(location.search) && !/preniveau|carte/.test(location.search)) Boutique.ouvrir();
+  if (0 && /[?&]boutique=(1|demo)/.test(location.search)) Boutique.ouvrir();
+  { const mp = /[?&]preniveau=(\d+)/.exec(location.search); if (mp) PreNiveau.ouvrir(NIVEAUX.findIndex(n => n.id === +mp[1])); }
   const m = /[?&]niveau=(\d+|demo)/.exec(location.search);   // ?niveau=4 (niveau 4) ou ?niveau=demo (démo des bloqueurs)
   const jeu = new Game(document.getElementById("jeu"), !m ? 0 : m[1] === "demo" ? -1 : NIVEAUX.findIndex(n => n.id === +m[1]));
   document.getElementById("btnPlus5").onclick = () => jeu.continuer();
@@ -3018,6 +4356,17 @@ if (typeof document !== "undefined" && document.getElementById("jeu")) {
   document.getElementById("btnNiveaux").onclick = () => Menu.ouvrir();
   document.getElementById("btnNiveauxFin").onclick = () => { jeu.quitterSession(); Menu.ouvrir(); };
   Menu.jeu = jeu;
+  journaliserNiveauxInvalides();
+  document.getElementById("btnBoutique").onclick = () => Boutique.ouvrir(() => Solde.maj());
+  document.getElementById("boutiqueFermer").onclick = () => Boutique.fermer();
+  document.getElementById("preJouer").onclick = () => PreNiveau.jouer();
+  document.getElementById("preRetour").onclick = () => PreNiveau.retour();
+  document.getElementById("preBoutique").onclick = () => Boutique.ouvrir(() => PreNiveau.construire());
+  Renovation.chargerSuivants().then(l => { if (l.length) EcranRenovation.majBadge(); });   // renovation_<room>.json livrés
+  // debug : ?boutique=demo (or + boosters de test), ?preniveau=N
+  // ?fin=demo : victoire immédiate au niveau 1 (capture du solde animé en fin de niveau)
+  if (/[?&]fin=demo/.test(location.search)) setTimeout(() => { Economie.ajouterOr(250, "debug"); Menu.fermer(); jeu.allerNiveau(1); jeu.coupsAvantRush = 5; jeu.terminer(true); }, 200);
+  Solde.maj();
   if (!m) Menu.ouvrir();          // écran de sélection au démarrage (sauf ?niveau=N)
   DebugUI.init(jeu);
   window.chefMatch = jeu; // accès debug depuis la console
@@ -3025,7 +4374,7 @@ if (typeof document !== "undefined" && document.getElementById("jeu")) {
   const interrompre = () => { if (jeu.log && !jeu.log.data.resultat) jeu.log.fin("interrompu"); };
   window.addEventListener("pagehide", interrompre); window.addEventListener("beforeunload", interrompre);
 }
-if (typeof module !== "undefined") module.exports = { Game, ETAT, categorie, Store, Logs, Progres, Board, creerPiece, creerPlat, CONFIG, NIVEAUX, NIVEAU_DEMO, BLOQUEURS, TYPE_PLAT, Economie, CONFIG_ECONOMIE, Visuels, IMAGES_OBSTACLES, Renovation, DATA_RENOVATION, RENOVATION_TERRASSE, TEXTES, PIECES, TUTOS, BONUS_FIN, txt };
+if (typeof module !== "undefined") module.exports = { Game, ETAT, categorie, Store, Logs, Progres, Board, creerPiece, creerPlat, CONFIG, NIVEAUX, NIVEAU_DEMO, BLOQUEURS, TYPE_PLAT, Economie, CONFIG_ECONOMIE, Visuels, IMAGES_OBSTACLES, Renovation, DATA_RENOVATION, RENOVATION_TERRASSE, RENOVATION_SALLE, validerNiveau, VALIDATION_NIVEAUX, Vies, coffreDepuisArtStory, TEXTES, Solde, Boutique, PreNiveau, lieuAnnonce, NOMS_LIEUX, PIECES, TUTOS, BONUS_FIN, txt };
 </script>
 </body>
 </html>

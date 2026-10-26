@@ -1,0 +1,154 @@
+{
+  "location": "dining_room",
+  "unlock_level": 13,
+  "background_before": "assets/room_before.jpg",
+  "background_after": "assets/room_after.jpg",
+  "layers_fullframe": true,
+  "tasks": [
+    {
+      "id": "clear_room",
+      "cost": 2,
+      "label": "Débarrasser les cartons et la poussière",
+      "image": "assets/task_room_clear.png",
+      "dialogue": [
+        {
+          "who": "emma",
+          "text": "Des cartons partout... Mamie gardait vraiment tout."
+        },
+        {
+          "who": "margot",
+          "text": "Et sous la poussière, il y a toujours des secrets, ma chérie."
+        }
+      ]
+    },
+    {
+      "id": "paint_walls",
+      "cost": 2,
+      "label": "Repeindre les murs",
+      "image": "assets/task_room_walls.png",
+      "dialogue": [
+        {
+          "who": "emma",
+          "text": "Crème et bleu marine, comme sur les vieilles photos."
+        },
+        {
+          "who": "leo",
+          "text": "On dirait que la salle respire de nouveau."
+        }
+      ]
+    },
+    {
+      "id": "fix_floor",
+      "cost": 2,
+      "label": "Poncer et vernir le parquet",
+      "image": "assets/task_room_floor.png",
+      "dialogue": [
+        {
+          "who": "victor",
+          "text": "Joli parquet. Il fera un beau sol pour mon futur hôtel."
+        },
+        {
+          "who": "emma",
+          "text": "Il fera surtout danser mes clients, Victor."
+        }
+      ]
+    },
+    {
+      "id": "place_tables",
+      "cost": 3,
+      "label": "Installer les tables et les nappes",
+      "image": "assets/task_room_tables.png",
+      "dialogue": [
+        {
+          "who": "margot",
+          "text": "Des nappes à carreaux ! Tout le port va en parler."
+        },
+        {
+          "who": "emma",
+          "text": "C'est un peu le but, Margot."
+        }
+      ]
+    },
+    {
+      "id": "add_chairs",
+      "cost": 3,
+      "label": "Ajouter les chaises et les banquettes",
+      "image": "assets/task_room_chairs.png",
+      "dialogue": [
+        {
+          "who": "leo",
+          "text": "J'ai retapé la banquette moi-même. Elle te plaît ?"
+        },
+        {
+          "who": "emma",
+          "text": "Elle est parfaite... merci, Léo."
+        },
+        {
+          "who": "margot",
+          "text": "Oh là là, je n'ai rien vu. Enfin, presque rien."
+        }
+      ]
+    },
+    {
+      "id": "hang_lamps",
+      "cost": 3,
+      "label": "Suspendre les lustres",
+      "image": "assets/task_room_lamps.png",
+      "dialogue": [
+        {
+          "who": "emma",
+          "text": "Mamie allumait ces lampes chaque soir à sept heures."
+        },
+        {
+          "who": "leo",
+          "text": "Alors on les allumera à sept heures."
+        }
+      ]
+    },
+    {
+      "id": "restore_counter",
+      "cost": 3,
+      "label": "Restaurer le comptoir et le passe-plat",
+      "image": "assets/task_room_counter.png",
+      "dialogue": [
+        {
+          "who": "emma",
+          "text": "Il y a quelque chose coincé derrière le passe-plat..."
+        },
+        {
+          "who": "emma",
+          "text": "Le carnet de Mamie Rose ! Et une lettre..."
+        }
+      ]
+    }
+  ],
+  "ending": {
+    "scene": "rose_notebook",
+    "dialogue": [
+      {
+        "who": "emma",
+        "text": "« Pour ma petite-fille Emma... et pour sa sœur. »"
+      },
+      {
+        "who": "emma",
+        "text": "Sa sœur ? Mais je suis fille unique !"
+      },
+      {
+        "who": "margot",
+        "text": "Ma chérie... il y a des choses que ta grand-mère ne t'a jamais dites."
+      },
+      {
+        "who": "victor",
+        "text": "Intéressant. Très intéressant."
+      },
+      {
+        "who": "emma",
+        "text": "Je trouverai la vérité. Et ce restaurant restera ouvert."
+      }
+    ]
+  },
+  "reward": {
+    "gold": 500,
+    "booster": "star"
+  }
+}
