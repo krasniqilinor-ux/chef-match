@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Chef Match – v0.2.4</title>
+<title>Chef Match – v0.2.5</title>
 <style>
   html,body{margin:0;height:100%;background:#3b2418;overflow:hidden;touch-action:none;
     font-family:"Trebuchet MS",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
@@ -64,7 +64,7 @@
   <button id="btnLogFin">📋 Copier le log</button>
 </div></div>
 
-<div id="version">v0.2.4</div>
+<div id="version">v0.2.5</div>
 <button id="btnNiveaux">☰ Niveaux</button>
 <div id="ecranNiveaux" class="ecran"><h1>👨‍🍳 Chef Match</h1><div class="sous">La Petite Marée – choisis un niveau</div><div id="grilleNiveaux"></div></div>
 <div id="intro" class="ecran"><div id="bulle"></div><div id="introAide">Touche pour continuer</div><button id="btnPasser">Passer ⏭</button></div>
@@ -89,13 +89,13 @@
 /* =====================================================================
  * 1. CONFIGURATION & NIVEAU (données pures, futur fichier JSON)
  * ===================================================================== */
-const VERSION = "v0.2.4";
+const VERSION = "v0.2.5";
 const CONFIG = {
   types: ["🍕","🍔","🍣","🥐","🍩","🥗"], // index = type de pièce
   durees: { swap: 160, rebond: 130, pop: 180, chuteParCase: 70, spawn: 160 }, // ms
   seuilSwipe: 0.3,
   indiceCoupsMax: 3,        // indice seulement si coups restants <= 3
-  delaiIndice: 30000,       // ms d'inactivité avant l'indice automatique (MatchDesign v0.2.4 : 30 s)          // fraction de case pour déclencher un swipe
+  delaiIndice: 15000,       // ms d'inactivité avant l'indice automatique (v0.2.5 : 15 s)          // fraction de case pour déclencher un swipe
   couleurs: { fond:"#3b2418", plateau:"#f3d9b1", case1:"#fbe8c8", case2:"#f1d3a5",
               hud:"#fff4e0", texte:"#5a3220", accent:"#e0703a", selection:"#ffb347" }
 };
@@ -1226,7 +1226,7 @@ class Game {
     // Hors IDLE « libre » (animations, rush, tuto, écrans) : pas d'indice et le délai repart de zéro
     if (!this.indiceAutorise()) { this.indiceAuto = null; this.idleDepuis = t; this.indiceEvalue = false; return; }
     if (this.indiceAuto || this.indiceEvalue || t - (this.idleDepuis || t) < CONFIG.delaiIndice) return;
-    // Règle v0.2.4 : indice UNIQUEMENT quand il reste <= 3 coups (compteur), après 30 s d'inactivité
+    // Règle v0.2.5 : indice UNIQUEMENT quand il reste <= 3 coups (compteur), après 15 s d'inactivité
     if (this.coups > CONFIG.indiceCoupsMax) return;
     const coup = this.board.meilleurCoup(this.objectifs.filter(o => o.restant > 0).map(o => o.type));
     if (!coup) return;
@@ -1699,7 +1699,7 @@ if (typeof document !== "undefined" && document.getElementById("jeu")) {
   DebugUI.init(jeu);
   window.chefMatch = jeu; // accès debug depuis la console
 }
-if (typeof module !== "undefined") module.exports = { categorie, Store, Logs, Progres, Board, creerPiece, CONFIG, NIVEAUX, TEXTES, PIECES, TUTOS, BONUS_FIN, txt };
+if (typeof module !== "undefined") module.exports = { Game, ETAT, categorie, Store, Logs, Progres, Board, creerPiece, CONFIG, NIVEAUX, TEXTES, PIECES, TUTOS, BONUS_FIN, txt };
 </script>
 </body>
 </html>
