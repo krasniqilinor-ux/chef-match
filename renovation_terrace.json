@@ -85,7 +85,24 @@
      "text": "Une boîte ? Pour moi ?"
     }
    ],
-   "image": "assets/task_chairs.png"
+   "image": "assets/task_chairs.png",
+   "styles": [
+    {
+     "id": "base",
+     "cost": 0,
+     "file": "assets/task_chairs.png"
+    },
+    {
+     "id": "riviera",
+     "cost": 300,
+     "file": "assets/deco_terrace_add_chairs_riviera.png"
+    },
+    {
+     "id": "bistrot",
+     "cost": 300,
+     "file": "assets/deco_terrace_add_chairs_bistrot.png"
+    }
+   ]
   },
   {
    "id": "hang_lights",
@@ -101,7 +118,24 @@
      "text": "Ça ressemble enfin à La Petite Marée d'avant."
     }
    ],
-   "image": "assets/task_garlands.png"
+   "image": "assets/task_garlands.png",
+   "styles": [
+    {
+     "id": "base",
+     "cost": 0,
+     "file": "assets/task_garlands.png"
+    },
+    {
+     "id": "riviera",
+     "cost": 300,
+     "file": "assets/deco_terrace_hang_lights_riviera.png"
+    },
+    {
+     "id": "bistrot",
+     "cost": 300,
+     "file": "assets/deco_terrace_hang_lights_bistrot.png"
+    }
+   ]
   },
   {
    "id": "install_sign",

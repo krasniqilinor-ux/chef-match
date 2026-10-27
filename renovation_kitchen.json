@@ -55,6 +55,23 @@
      "who": "emma",
      "text": "Il veut la guerre ? Il aura la cuisine de Rose."
     }
+   ],
+   "styles": [
+    {
+     "id": "base",
+     "cost": 0,
+     "file": "assets/task_kit_stove.png"
+    },
+    {
+     "id": "riviera",
+     "cost": 300,
+     "file": "assets/deco_kitchen_restore_stove_riviera.png"
+    },
+    {
+     "id": "bistrot",
+     "cost": 300,
+     "file": "assets/deco_kitchen_restore_stove_bistrot.png"
+    }
    ]
   },
   {

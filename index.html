@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Chef Match – v0.5.1</title>
+<title>Chef Match – v0.5.2</title>
 <style>
   html,body{margin:0;height:100%;background:#3b2418 url("assets/bg_terrace.jpg") center/cover no-repeat;overflow:hidden;touch-action:none;
     font-family:"Trebuchet MS",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
@@ -148,7 +148,7 @@
   <button id="btnLogFin">📋 Copier le log</button>
 </div></div>
 
-<div id="version">v0.5.1</div>
+<div id="version">v0.5.2</div>
 <button id="btnNiveaux">☰ Niveaux</button>
 <button id="btnRenover">🔨 Rénover <span id="badgeRenover"></span></button>
 <div id="ecranRenovation" class="ecran">
@@ -190,7 +190,7 @@
 /* =====================================================================
  * 1. CONFIGURATION & NIVEAU (données pures, futur fichier JSON)
  * ===================================================================== */
-const VERSION = "v0.5.1";
+const VERSION = "v0.5.2";
 /** v0.5 : options de jeu. glissementPlat : un plat s'échange comme une pièce avec une voisine si la pièce déplacée
  *  matche (le plat ne matche jamais) ; arrivé sur la dernière case jouable il est livré. false = plats immobiles. */
 const CONFIG_JEU = { glissementPlat: true,
@@ -4313,6 +4313,23 @@ const RENOVATION_SALLE = {
      "who": "margot",
      "text": "Oh là là, je n'ai rien vu. Enfin, presque rien."
     }
+   ],
+   "styles": [
+    {
+     "id": "base",
+     "cost": 0,
+     "file": "assets/task_room_chairs.png"
+    },
+    {
+     "id": "riviera",
+     "cost": 300,
+     "file": "assets/deco_dining_room_add_chairs_riviera.png"
+    },
+    {
+     "id": "bistrot",
+     "cost": 300,
+     "file": "assets/deco_dining_room_add_chairs_bistrot.png"
+    }
    ]
   },
   {
@@ -4519,7 +4536,24 @@ const RENOVATION_TERRASSE = {
      "text": "Une boîte ? Pour moi ?"
     }
    ],
-   "image": "assets/task_chairs.png"
+   "image": "assets/task_chairs.png",
+   "styles": [
+    {
+     "id": "base",
+     "cost": 0,
+     "file": "assets/task_chairs.png"
+    },
+    {
+     "id": "riviera",
+     "cost": 300,
+     "file": "assets/deco_terrace_add_chairs_riviera.png"
+    },
+    {
+     "id": "bistrot",
+     "cost": 300,
+     "file": "assets/deco_terrace_add_chairs_bistrot.png"
+    }
+   ]
   },
   {
    "id": "hang_lights",
@@ -4535,7 +4569,24 @@ const RENOVATION_TERRASSE = {
      "text": "Ça ressemble enfin à La Petite Marée d'avant."
     }
    ],
-   "image": "assets/task_garlands.png"
+   "image": "assets/task_garlands.png",
+   "styles": [
+    {
+     "id": "base",
+     "cost": 0,
+     "file": "assets/task_garlands.png"
+    },
+    {
+     "id": "riviera",
+     "cost": 300,
+     "file": "assets/deco_terrace_hang_lights_riviera.png"
+    },
+    {
+     "id": "bistrot",
+     "cost": 300,
+     "file": "assets/deco_terrace_hang_lights_bistrot.png"
+    }
+   ]
   },
   {
    "id": "install_sign",
@@ -4806,6 +4857,23 @@ const RENOVATION_CUISINE = {
     {
      "who": "emma",
      "text": "Il veut la guerre ? Il aura la cuisine de Rose."
+    }
+   ],
+   "styles": [
+    {
+     "id": "base",
+     "cost": 0,
+     "file": "assets/task_kit_stove.png"
+    },
+    {
+     "id": "riviera",
+     "cost": 300,
+     "file": "assets/deco_kitchen_restore_stove_riviera.png"
+    },
+    {
+     "id": "bistrot",
+     "cost": 300,
+     "file": "assets/deco_kitchen_restore_stove_bistrot.png"
     }
    ]
   },

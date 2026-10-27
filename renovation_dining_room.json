@@ -103,6 +103,23 @@
      "who": "margot",
      "text": "Oh là là, je n'ai rien vu. Enfin, presque rien."
     }
+   ],
+   "styles": [
+    {
+     "id": "base",
+     "cost": 0,
+     "file": "assets/task_room_chairs.png"
+    },
+    {
+     "id": "riviera",
+     "cost": 300,
+     "file": "assets/deco_dining_room_add_chairs_riviera.png"
+    },
+    {
+     "id": "bistrot",
+     "cost": 300,
+     "file": "assets/deco_dining_room_add_chairs_bistrot.png"
+    }
    ]
   },
   {
