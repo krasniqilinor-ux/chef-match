@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Chef Match – v0.5-dev</title>
+<title>Chef Match – v0.5.1</title>
 <style>
   html,body{margin:0;height:100%;background:#3b2418 url("assets/bg_terrace.jpg") center/cover no-repeat;overflow:hidden;touch-action:none;
     font-family:"Trebuchet MS",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
@@ -148,7 +148,7 @@
   <button id="btnLogFin">📋 Copier le log</button>
 </div></div>
 
-<div id="version">v0.5-dev</div>
+<div id="version">v0.5.1</div>
 <button id="btnNiveaux">☰ Niveaux</button>
 <button id="btnRenover">🔨 Rénover <span id="badgeRenover"></span></button>
 <div id="ecranRenovation" class="ecran">
@@ -190,7 +190,7 @@
 /* =====================================================================
  * 1. CONFIGURATION & NIVEAU (données pures, futur fichier JSON)
  * ===================================================================== */
-const VERSION = "v0.5-dev";
+const VERSION = "v0.5.1";
 /** v0.5 : options de jeu. glissementPlat : un plat s'échange comme une pièce avec une voisine si la pièce déplacée
  *  matche (le plat ne matche jamais) ; arrivé sur la dernière case jouable il est livré. false = plats immobiles. */
 const CONFIG_JEU = { glissementPlat: true,
@@ -2187,7 +2187,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 35,
-      "moves": 28,
+      "moves": 27,
       "colors": [
         "tomato",
         "croissant",
@@ -3060,7 +3060,7 @@ const DATA_NIVEAUX = {
     },
     {
       "id": 47,
-      "moves": 36,
+      "moves": 35,
       "colors": [
         "tomato",
         "croissant",
@@ -3999,9 +3999,9 @@ const Store = {
   del(k) { delete this.mem[k]; try { localStorage.removeItem(k); } catch (e) {} }
 };
 
-/** Logs de playtest persistés : une entrée par session, 50 dernières conservées. */
+/** Logs de playtest persistés : une entrée par session, 100 dernières conservées (v0.5.1). */
 const Logs = {
-  MAX: 50,
+  MAX: 100,
   /** v0.5 : session « fantôme » = 0 coup et aucune interaction (échange tenté, booster, +5...) : ignorée. */
   fantome(d) { return !!d && !d.coupsJoues && !d.echangesInvalides && !d.echangesBloques && !(d.evenements || []).some(e => /booster|plus5|offre|activation/.test(e.nom)); },
   tous() { const l = Store.get(CLES.logs, []); return Array.isArray(l) ? l.filter(x => !this.fantome(x)) : []; },
@@ -4068,7 +4068,10 @@ const CONFIG_ECONOMIE = {
  *  stars_spent { montant, motif, solde_apres }               — tâches de rénovation (payées en étoiles)
  */
 const EcoLog = {
-  CLE: "chefmatch.eco_evts", MAX: 500, niveau: null,
+  CLE: "chefmatch.eco_evts", MAX: 500, niveau: null, CLE_GAGNE: "chefmatch.eco_dernier_gagne",
+  /** v0.5.1 : dernier niveau gagné (persisté) — sert aux paiements de la banque. */
+  dernierGagne() { const n = Store.get(this.CLE_GAGNE, null); return typeof n === "number" ? n : null; },
+  noterVictoire(id) { if (typeof id === "number") Store.set(this.CLE_GAGNE, id); },
   tous() { const l = Store.get(this.CLE, []); return Array.isArray(l) ? l : []; },
   niveauCourant() { if (this.niveau != null) return this.niveau; try { return Progres.lire().debloques || null; } catch (e) { return null; } },
   noter(evt, champs) { const e = { evt, ...champs, t: new Date().toISOString(), version: VERSION }; Store.set(this.CLE, [...this.tous(), e].slice(-this.MAX)); return e; },
@@ -4115,8 +4118,9 @@ const Economie = {
     if (CONFIG_ECONOMIE.modeTest || prixOr === 0) { accorde = true; gratuit = true; }
     else if (e.or >= prixOr) { e.or -= prixOr; accorde = true; }
     this.journaliser(e, { type: "offre", offre: id, prixOr, accorde, gratuit, ...contexte });
+    if (accorde && !gratuit) this.journaliser(e, { type: "or", n: -prixOr, raison: id === "plus5coups" ? "plus5" : id });   // v0.5.1
     this.ecrire(e);
-    if (accorde && !gratuit) EcoLog.goldSpent(prixOr, id, contexte.niveau);   // v0.5 : +5 coups payé
+    if (accorde && !gratuit) EcoLog.goldSpent(prixOr, id === "plus5coups" ? "plus5" : id, contexte.niveau);   // v0.5.1 : motif plus5
     return { ...o, accorde, gratuit, offre: id, prixOr };
   },
   /** Prix d'une offre. +5 coups : 0 jusqu'au niveau 30, puis paliers selon contexte.achatsPartie (achats déjà faits dans la partie). */
@@ -4588,7 +4592,8 @@ const POSITIONS_OVERLAYS = {   // v0.3.4 : calques ArtStory plein cadre 1080×19
 };
 /** Format ArtStory -> format interne. Overlay = champ "image" de chaque tâche (pas de déduction depuis l'id). */
 const NOMS_LIEUX = { terrace: "La terrasse", dining_room: "La salle", kitchen: "La cuisine" };
-const COFFRE_DEFAUT = { or: 500, booster: "bombe", nbBooster: 1 };   // TODO MatchDesign : coffre par pièce
+const COFFRE_DEFAUT = { or: 500, booster: "bombe", nbBooster: 1 };
+const COFFRE_CUISINE = { ...COFFRE_DEFAUT, or: 300 };   // v0.5.1 : ChefLead 27/10   // TODO MatchDesign : coffre par pièce
 /** v0.5 : portraits affichés dans les bulles (id ArtStory -> image) */
 const PORTRAITS = { banker: "assets/char_dupre.png", chloe: "assets/char_chloe.png" };
 const portraitLigne = l => { const id = Object.keys(PORTRAITS).find(k => l.startsWith((PERSONNAGES[k] || k) + " :")); return id ? PORTRAITS[id] : null; };
@@ -4958,7 +4963,7 @@ const RENOVATION_CUISINE = {
   }
  ]
 };
-{ const K = Renovation.enregistrerLieu(RENOVATION_CUISINE);
+{ const K = Renovation.enregistrerLieu(RENOVATION_CUISINE, COFFRE_CUISINE);
   K.niveauDeblocage = K.niveauDeblocage || 31; K.niveauGagneRequis = K.niveauDeblocage - 1;   // next.unlock_level 31 de la salle = niveau 30 gagné (+ salle finie)
   K.dialogueArrivee = K.dialogueArrivee && K.dialogueArrivee.length ? K.dialogueArrivee : []; }
 /**
@@ -4980,7 +4985,7 @@ const Banque = {
     const s = this.lire(); if (s.echeances[p.id]) return s.echeances[p.id];
     const e = { id: p.id, lieu, du: p.cout, paye: 0, ouverte: new Date().toISOString() };
     const n = Math.min(Economie.or(), e.du);
-    if (n > 0 && Economie.depenserOr(n, "banque_" + p.id)) e.paye = n;
+    if (n > 0 && Economie.depenserOr(n, "banque_" + p.id, EcoLog.dernierGagne())) e.paye = n;   // v0.5.1 : dernier niveau gagné
     s.echeances[p.id] = e; this.ecrire(s); return e;
   },
   soldee(id) { const e = this.lire().echeances[id]; return !!e && e.paye >= e.du; },
@@ -4990,7 +4995,7 @@ const Banque = {
     const n = Math.min(e.du - e.paye, Math.ceil(gain * CONFIG_BANQUE.partPrelevement));
     e.paye += n; this.ecrire(s);
     const E = Economie.lire(); Economie.journaliser(E, { type: "banque", id: e.id, n, raison, paye: e.paye, du: e.du }); Economie.ecrire(E);
-    EcoLog.goldSpent(n, "banque_prelevement_" + e.id, null, Economie.or() + gain - n);
+    EcoLog.goldSpent(n, "banque_prelevement_" + e.id, EcoLog.dernierGagne(), Economie.or() + gain - n);   // v0.5.1
     return { preleve: n, id: e.id, paye: e.paye, du: e.du };
   }
 };
@@ -6076,6 +6081,8 @@ class Game {
     if (tuto) { const coup = this.board.preparerTuto(tuto); if (coup) { this.indice = coup; this.tutoCoup = coup; } }
     this.afficherMessage(this.objectifs.map(o => this.texteObjectif(o)).join("\n"), 2200);
     this.log = new PlaytestLog(this); this.sessions.push(this.log.data);
+    { const tu = N.tutorial ? N.tutorial : N.id === 31 ? "stew_pot_intro" : null;   // v0.5.1 : tutorial_shown
+      if (tu && !N.demo) { this.log.evenement("tutorial_shown"); Object.assign(this.log.data.evenements[this.log.data.evenements.length - 1], { tutoriel: tu, niveau: N.id }); } }
     // v0.4-dev : boosters choisis à l'écran pré-niveau (aucun tirage aléatoire en plus si aucun booster)
     EcoLog.niveau = N.demo ? null : N.id;   // v0.5 : niveau courant des événements économie
     this.achatsPlus5 = 0;   // nouvelle partie : paliers +5 coups remis à zéro
@@ -6388,6 +6395,10 @@ class Game {
     // Victoire vérifiée après stabilisation des cascades, puis bonus de fin
     if (this.objectifs.every(o => o.restant === 0)) {
       this.coupsAvantRush = this.coups;      // meilleur résultat = coups restants AVANT le bonus
+      if (this.log && this.log.data) this.log.data.coupsRestantsObjectif = this.coups;   // v0.5.1 : avant Sweet Rush
+      { const av = this.board.grille.map(l => l.map(p => p ? p.type : null)), sv = this.board.servirRagouts ? this.board.servirRagouts() : [];   // v0.5.1
+        sv.forEach(() => { if (this.log && this.log.evenement) this.log.evenement("ragout_servi"); });
+        if (sv.length && this.animerRagouts) await this.animerRagouts(sv, av); }
       await this.sweetRush(); return this.terminer(true);
     }
     // v0.5 : ragoûts servis -> projection de 3 pièces ; vapeur -> glace légère
@@ -6487,6 +6498,7 @@ class Game {
     this.soldeAvant = { or: Economie.or(), etoiles: Economie.etoiles() };
     this.etoilesGagnees = victoire && this.indexNiveau >= 0 && !demo && !dejaGagne ? Economie.gagnerEtoilesNiveau(this.niveau.id) : 0;
     this.orGagne = victoire && this.indexNiveau >= 0 && !demo ? Economie.orVictoire(this.coupsAvantRush, dejaGagne) : 0;
+    if (victoire && this.indexNiveau >= 0 && !demo) EcoLog.noterVictoire(this.niveau.id);   // v0.5.1
     if (!victoire && this.indexNiveau >= 0 && !demo) this.vie = Vies.perdre(this.niveau.id);
     // v0.5 : échéance bancaire en cours -> une part de l'or de victoire est prélevée (jamais bloquant avant le niveau 100)
     this.banque = this.orGagne ? Banque.prelever(this.orGagne, "victoire_niveau_" + this.niveau.id) : null;
@@ -6571,8 +6583,15 @@ class PlaytestLog {
     const B = this.jeu.board; if (!B || !B.platsInit || !B.platsInit.length) return null;
     return B.positionsPlats().map(({ r, c }) => { let d = 0; for (let y = r + 1; y < B.L; y++) if (B.jouable(y, c) && !B.fixe(y, c)) d++; return [r, c, d]; });
   }
+  /** v0.5.1 : casseroles restantes [r, c, jauge, couleur] (null si aucune casserole dans le niveau). */
+  jaugesCasseroles() {
+    const B = this.jeu.board; if (!B || !B.bloc) return null; const l = [];
+    for (let r = 0; r < B.L; r++) for (let c = 0; c < B.C; c++) { const b = B.bloc[r][c]; if (b && b.type === "stew_pot") l.push([r, c, b.jauge || 0, b.couleur]); }
+    return l.length || (this.jeu.objectifs || []).some(o => o.cle === "stew_pot") ? l : null;
+  }
   fin(resultat) {
     { const pl = this.positionsPlats(); if (pl) this.data.platsFin = pl; }
+    { const cf = this.jaugesCasseroles(); if (cf) this.data.casserolesFin = cf; }   // v0.5.1
     if (this.data.provisoire && resultat !== "interrompu") { delete this.data.provisoire; const ev = this.data.evenements; if (ev.length && ev[ev.length - 1].nom === "fin_interrompu") ev.pop(); }
     this.evenement("fin_" + resultat);
     this.data.resultat = resultat; this.data.coupsRestants = this.jeu.coups;
@@ -6868,7 +6887,7 @@ const EcranRenovation = {
     b.textContent = n; b.classList.toggle("on", n > 0);
   },
   ouvrir() { UI.cacher(); this.construire(); this.el().classList.add("show"); },
-  fermer() { this.el().classList.remove("show"); document.getElementById("renoBulle").classList.remove("show"); this.majBadge(); },
+  fermer() { this._marcheAffiche = false; this.el().classList.remove("show"); document.getElementById("renoBulle").classList.remove("show"); this.majBadge(); },
   construire(nouveau = null) {
     const lieu = Renovation.lieu(), s = Renovation.etat(), et = Economie.etoiles();
     document.getElementById("renoTitre").textContent = "🔨 " + lieu.nom;
@@ -6892,6 +6911,8 @@ const EcranRenovation = {
         bm.onclick = () => { const r = Economie.acheterEtoile(); if (r.ok) { this.construire(); this.majBadge(); Solde.maj(); } };
         tt.insertBefore(bm, document.getElementById("btnDecorer") || document.getElementById("renoFermer")); }
       if (bm && bm.style) { const vis = Renovation.marcheVisible(), m = Economie.marche(), px = Economie.prixEtoile(m.niveau);
+        if (vis && !this._marcheAffiche) EcoLog.noter("etoile_marche_shown", { prix: px, reserve: m.reserve, or: Economie.or(), etoiles: Economie.etoiles(), niveau: EcoLog.niveauCourant() });   // v0.5.1
+        this._marcheAffiche = vis;
         bm.style.display = vis ? "" : "none"; bm.disabled = Economie.or() < px;
         bm.textContent = `+1 ⭐ · 🪙 ${px}`; bm.title = "Étoile du marché : 1 étoile contre de l'or (réserve : " + m.reserve + ")"; } }
     document.getElementById("renoProgres").style.width = (100 * s.faites.length / lieu.taches.length) + "%";
@@ -7058,7 +7079,7 @@ if (typeof document !== "undefined" && document.getElementById("jeu")) {
     if (document.visibilityState === "hidden") L.cacher(); else L.reprendre();
   });
 }
-if (typeof module !== "undefined") module.exports = { Game, ETAT, categorie, Store, Logs, Progres, Board, creerPiece, creerPlat, CONFIG, NIVEAUX, NIVEAU_DEMO, BLOQUEURS, TYPE_PLAT, Economie, CONFIG_ECONOMIE, Visuels, IMAGES_OBSTACLES, Renovation, DATA_RENOVATION, RENOVATION_TERRASSE, RENOVATION_SALLE, RENOVATION_CUISINE, Banque, CONFIG_BANQUE, CONFIG_STEW, CONFIG_JEU, ScenesLog, EcoLog, Deco, CONFIG_DECO, EcranDeco, ANIM_BURST, CONFIG_BURST, Burst, Easing, PORTRAITS, portraitLigne, lignesDialogue, DATA_NIVEAUX_DEMO, activerNiveauxDemo, EcranRenovation, Migrations, PlaytestLog, validerNiveau, VALIDATION_NIVEAUX, Vies, coffreDepuisArtStory, TEXTES, Solde, Boutique, PreNiveau, lieuAnnonce, NOMS_LIEUX, PIECES, TUTOS, BONUS_FIN, txt };
+if (typeof module !== "undefined") module.exports = { COFFRE_DEFAUT, COFFRE_CUISINE, Game, ETAT, categorie, Store, Logs, Progres, Board, creerPiece, creerPlat, CONFIG, NIVEAUX, NIVEAU_DEMO, BLOQUEURS, TYPE_PLAT, Economie, CONFIG_ECONOMIE, Visuels, IMAGES_OBSTACLES, Renovation, DATA_RENOVATION, RENOVATION_TERRASSE, RENOVATION_SALLE, RENOVATION_CUISINE, Banque, CONFIG_BANQUE, CONFIG_STEW, CONFIG_JEU, ScenesLog, EcoLog, Deco, CONFIG_DECO, EcranDeco, ANIM_BURST, CONFIG_BURST, Burst, Easing, PORTRAITS, portraitLigne, lignesDialogue, DATA_NIVEAUX_DEMO, activerNiveauxDemo, EcranRenovation, Migrations, PlaytestLog, validerNiveau, VALIDATION_NIVEAUX, Vies, coffreDepuisArtStory, TEXTES, Solde, Boutique, PreNiveau, lieuAnnonce, NOMS_LIEUX, PIECES, TUTOS, BONUS_FIN, txt };
 </script>
 </body>
 </html>
