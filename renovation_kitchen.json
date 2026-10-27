@@ -1,0 +1,213 @@
+{
+  "location": "kitchen",
+  "chapter": 2,
+  "background_before": "assets/kitchen_before.jpg",
+  "background_after": "assets/kitchen_after.jpg",
+  "layers_fullframe": true,
+  "tasks": [
+    {
+      "id": "clear_cupboards",
+      "cost": 2,
+      "label": "Vider les placards",
+      "image": "assets/task_kit_cupboards.png",
+      "dialogue": [
+        {
+          "who": "emma",
+          "text": "Des boîtes de sardines de 1987... Mamie !"
+        },
+        {
+          "who": "chloe",
+          "text": "Et ce moule à cannelés ? C'est exactement celui de ma mère."
+        }
+      ]
+    },
+    {
+      "id": "scrub_tiles",
+      "cost": 2,
+      "label": "Récurer le carrelage",
+      "image": "assets/task_kit_tiles.png",
+      "dialogue": [
+        {
+          "who": "margot",
+          "text": "Cette Chloé loge chez moi. Elle parle toute seule à une vieille photo."
+        },
+        {
+          "who": "emma",
+          "text": "Margot, tu fouilles encore ?"
+        },
+        {
+          "who": "margot",
+          "text": "J'observe, ma chérie. Nuance."
+        }
+      ]
+    },
+    {
+      "id": "restore_stove",
+      "cost": 3,
+      "label": "Restaurer le piano de cuisson",
+      "image": "assets/task_kit_stove.png",
+      "dialogue": [
+        {
+          "who": "leo",
+          "text": "Victor ouvre un restaurant sur le quai d'en face. Le Valmont."
+        },
+        {
+          "who": "emma",
+          "text": "Il veut la guerre ? Il aura la cuisine de Rose."
+        }
+      ]
+    },
+    {
+      "id": "polish_copper",
+      "cost": 3,
+      "label": "Astiquer les cuivres",
+      "image": "assets/task_kit_copper.png",
+      "dialogue": [
+        {
+          "who": "chloe",
+          "text": "Je peux t'aider. Je suis pâtissière, et je cherche du travail."
+        },
+        {
+          "who": "emma",
+          "text": "Tu es engagée. Mais tu commences par les casseroles !"
+        }
+      ]
+    },
+    {
+      "id": "fix_coldroom",
+      "cost": 3,
+      "label": "Réparer la chambre froide",
+      "image": "assets/task_kit_coldroom.png",
+      "dialogue": [
+        {
+          "who": "victor",
+          "text": "Mademoiselle Chloé, Le Valmont paie le double."
+        },
+        {
+          "who": "chloe",
+          "text": "Gardez votre argent. Ici, ça sent la maison."
+        }
+      ]
+    },
+    {
+      "id": "replant_herbs",
+      "cost": 3,
+      "label": "Replanter les herbes",
+      "image": "assets/task_kit_herbs.png",
+      "dialogue": [
+        {
+          "who": "leo",
+          "text": "Thym, romarin, basilic... comme dans le carnet."
+        },
+        {
+          "who": "emma",
+          "text": "Page 12 : « Les herbes d'abord, l'amour ensuite. » Typique de Mamie."
+        }
+      ]
+    },
+    {
+      "id": "spice_shelf",
+      "cost": 4,
+      "label": "Poser l'étagère à épices",
+      "image": "assets/task_kit_spices.png",
+      "dialogue": [
+        {
+          "who": "margot",
+          "text": "La banque est passée. Première échéance avant la fin du mois."
+        },
+        {
+          "who": "emma",
+          "text": "Alors on cuisine plus fort que Victor."
+        }
+      ]
+    },
+    {
+      "id": "light_oven",
+      "cost": 4,
+      "label": "Rallumer le four de Rose",
+      "image": "assets/task_kit_oven.png",
+      "dialogue": [
+        {
+          "who": "chloe",
+          "text": "Cette tarte... je la fais depuis toute petite. La recette de ma grand-mère."
+        },
+        {
+          "who": "emma",
+          "text": "C'est la tarte de Rose. Écrite de sa main, dans le carnet."
+        }
+      ]
+    }
+  ],
+  "ending": {
+    "scene": "sisters_reveal",
+    "dialogue": [
+      {
+        "who": "chloe",
+        "text": "Emma... il faut que je te montre quelque chose."
+      },
+      {
+        "who": "chloe",
+        "text": "Cette photo. Rose, il y a trente ans, avec ma mère."
+      },
+      {
+        "who": "emma",
+        "text": "C'est... ma grand-mère."
+      },
+      {
+        "who": "chloe",
+        "text": "Elle était aussi la mienne."
+      },
+      {
+        "who": "margot",
+        "text": "Je LE SAVAIS !"
+      }
+    ]
+  },
+  "bank_payments": [
+    {
+      "id": "bank_payment_1",
+      "cost_gold": 800,
+      "after_task": "polish_copper",
+      "dialogue": [
+        {
+          "who": "banker",
+          "text": "Monsieur Dupré, Banque du Littoral. Première échéance : 800 pièces, mademoiselle Laurent."
+        },
+        {
+          "who": "emma",
+          "text": "Les voilà. Et revenez dîner, un jour."
+        }
+      ]
+    },
+    {
+      "id": "bank_payment_2",
+      "cost_gold": 1200,
+      "after_task": "replant_herbs",
+      "dialogue": [
+        {
+          "who": "banker",
+          "text": "Deuxième échéance. Monsieur Valmont me demande souvent de vos nouvelles..."
+        },
+        {
+          "who": "emma",
+          "text": "Dites-lui que la cuisine sent bon."
+        }
+      ]
+    },
+    {
+      "id": "bank_payment_3",
+      "cost_gold": 1600,
+      "after_task": "spice_shelf",
+      "dialogue": [
+        {
+          "who": "banker",
+          "text": "Dernière échéance de l'année. Je dois avouer que je ne pensais pas vous revoir."
+        },
+        {
+          "who": "chloe",
+          "text": "Vous ne connaissiez pas les femmes de cette famille."
+        }
+      ]
+    }
+  ]
+}
